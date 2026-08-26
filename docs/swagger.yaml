@@ -1170,7 +1170,7 @@ paths:
                 moduletype: api
                 moduleinfo:
                   moduleurl: >-
-                    https://dev-nemo.intellicar.io/uimodules/console/remoteEntry.js
+                    Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
                 isenabled: false
       security:
         - cookieAuth: []
@@ -3481,7 +3481,7 @@ paths:
         - Password (8-128 characters)
         - reCAPTCHA token for security verification
 
-        Hash your password here -> https://academo.org/demos/SHA-256-hash-generator/
+        Hash your password here -> Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
       requestBody:
         required: true
         content:
@@ -8173,7 +8173,7 @@ paths:
                               type: string
                               format: uri
                               description: "URL to access the document"
-                              example: "https://storage.example.com/documents/user123/license.pdf"
+                              example: "Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
                             createdat:
                               type: string
                               format: date-time
@@ -9417,7 +9417,7 @@ paths:
       tags:
         - FMS JS > User
       summary: Get Super Admin Token
-      description: Hash your password here -> https://academo.org/demos/SHA-256-hash-generator/
+      description: Hash your password here ->Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
       requestBody:
         content:
           application/json:
@@ -11406,7 +11406,7 @@ paths:
                         url:
                           type: string
                           description: Banner image URL or content URL
-                          example: "https://example.com/banner.jpg"
+                          example: "Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
                         priority:
                           type: integer
                           description: Display priority (lower numbers = higher priority)

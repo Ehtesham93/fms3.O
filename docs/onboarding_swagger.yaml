@@ -14,7 +14,7 @@ paths:
         - Authentication
       summary: Get Token
       description: |
-        Hash your password here -> https://academo.org/demos/SHA-256-hash-generator/
+        Hash your password here -> Xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
       requestBody:
         content:
           application/json:
