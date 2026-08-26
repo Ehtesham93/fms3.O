@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Invisible reCAPTCHA Demo</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  </head>
+  <body>
+    <h1>Get Captcha Token</h1>
+    <p>Click the button to trigger Invisible reCAPTCHA and get the token.</p>
+
+    <form
+      id="demo-form"
+      onsubmit="event.preventDefault(); grecaptcha.execute();"
+    >
+      <button
+        class="g-recaptcha"
+        data-sitekey="sitekey"
+        data-callback="onRecaptchaSuccess"
+        data-size="invisible"
+      >
+        Get Token
+      </button>
+    </form>
+
+    <p id="status">Waiting for CAPTCHA...</p>
+    <textarea
+      id="tokenDisplay"
+      rows="5"
+      cols="80"
+      readonly
+      placeholder="Token will appear here..."
+    ></textarea>
+
+    <script>
+      function onRecaptchaSuccess(token) {
+        document.getElementById("status").textContent =
+          "CAPTCHA passed! Token below:";
+        document.getElementById("tokenDisplay").value = token;
+      }
+    </script>
+  </body>
+</html>

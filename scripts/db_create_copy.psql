@@ -1,0 +1,565 @@
+CREATE TABLE IF NOT EXISTS
+    superuser (
+        userid text not null,
+        secretprv text not null,
+        secretpub text not null,
+        createdat bigint not null,
+        updatedat bigint not null,
+        primary key (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    users (
+        userid text NOT NULL,
+        name text NOT NULL,
+        email text NOT NULL, -- todo: mobile
+        isemailverified boolean NOT NULL,
+        usermeta jsonb,
+        isenabled boolean NOT NULL,
+        secretprv text NOT NULL,
+        secretpub text NOT NULL,
+        createdat BIGINT NOT NULL,
+        updatedat BIGINT NOT NULL,
+        PRIMARY KEY (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    account (
+        accountid text NOT NULL,
+        name text NOT NULL,
+        meta jsonb, -- accounttype, accountdetails, billing
+        isenabled boolean NOT NULL DEFAULT TRUE,
+        createdat bigint default CAST(
+            extract(
+                epoch
+                from
+                    now()
+            ) * 1000 as bigint
+        ) NOT NULL,
+        createdby text NOT NULL,
+        updatedat BIGINT NOT NULL,
+        updatedby text NOT NULL,
+        primary key (accountid),
+        unique (name)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    fleet (
+        accountid text not null,
+        fleetid text not null,
+        name text not null,
+        isdeleted bool not null,
+        meta jsonb,
+        createdat bigint not null,
+        createdby text not null,
+        updatedat bigint not null,
+        updatedby text not null,
+        primary key (accountid, fleetid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    accountrfleet (
+        accountid text not null,
+        rootfleetid text not null,
+        primary key (accountid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    fleettree (
+        accountid text not null,
+        pfleetid text not null,
+        fleetid text not null,
+        name text not null,
+        primary key (accountid, pfleetid, fleetid),
+        unique (accountid, pfleetid, name)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    fleetuser (
+        accountid text not null,
+        fleetid text not null,
+        userid text not null,
+        primary key (accountid, fleetid, userid)
+    );
+
+-- for a particular accountid, fleetid, who all have access
+CREATE TABLE IF NOT EXISTS
+    fleetuserperms (
+        accountid text not null,
+        fleetid text not null,
+        userid text not null,
+        permid text not null, -- addgeofence, listgeofence
+        primary key (accountid, fleetid, userid, permid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    vehicles (
+        vinno text NOT NULL,
+        vehiclevariant text NOT NULL,
+        vehiclemodel text NOT NULL,
+        vehiclemeta jsonb NOT NULL,
+        createdat bigint default CAST(
+            extract(
+                epoch
+                from
+                    now()
+            ) * 1000 as bigint
+        ) NOT NULL,
+        createdby text NOT NULL,
+        updatedat bigint NOT NULL,
+        updatedby text NOT NULL,
+        primary key (vinno)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    accountvehicles (
+        accountid text NOT NULL,
+        vinno text NOT NULL,
+        regno text NOT NULL,
+        shareflag int NOT NULL,
+        accvinmeta jsonb NOT NULL,
+        updatedat bigint NOT NULL,
+        updatedby text NOT NULL,
+        primary key (accountid, vinno),
+        unique (accountid, regno)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    fleetvehicles (
+        accountid text NOT NULL,
+        fleetid text NOT NULL,
+        vinno text NOT NULL,
+        isexist bool NOT NULL,
+        updatedat bigint NOT NULL,
+        updatedby text NOT NULL,
+        primary key (accountid, fleetid, vinno, isexist),
+        unique (accountid, fleetid, vinno)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    fleetvehiclehist (
+        accountid text NOT NULL,
+        fleetid text NOT NULL,
+        vinno text NOT NULL,
+        addedat bigint NOT NULL,
+        addedby text NOT NULL,
+        removedat bigint NOT NULL,
+        removedby text NOT NULL,
+        primary key (accountid, fleetid, vinno, addedat)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    userdashboards (
+        accountid text NOT NULL,
+        userid text NOT NULL,
+        dashboardid text NOT NULL,
+        dashboardname text NOT NULL,
+        dashboardtype text NOT NULL,
+        dashboardinfo jsonb NOT NULL,
+        createdat bigint default CAST(
+            extract(
+                epoch
+                from
+                    now()
+            ) * 1000 as bigint
+        ) NOT NULL,
+        updatedat bigint NOT NULL,
+        primary key (accountid, userid, dashboardid),
+        unique (accountid, userid, dashboardname)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    modelparams (
+        model text NOT NULL,
+        variant text NOT NULL,
+        paramname text NOT NULL, --- user readable parameter name "SOC", "Cell Temperatures"
+        queryparams text NOT NULL, --- parameter he has to send in the query ["soc"], ["bt1", "bt2", "bt3"]
+        unit text NOT NULL, --- "%", "C"
+        createdat bigint default CAST(
+            extract(
+                epoch
+                from
+                    now()
+            ) * 1000 as bigint
+        ) NOT NULL,
+        updatedat bigint NOT NULL,
+        primary key (model)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    activitylog (
+        auditid BIGINT GENERATED BY DEFAULT AS IDENTITY (
+            START
+            WITH
+                1 INCREMENT BY 1
+        ),
+        msgtype text NOT NULL,
+        msgpayload jsonb NOT NULL,
+        updatedat BIGINT default CAST(
+            extract(
+                epoch
+                from
+                    now()
+            ) * 1000 as bigint
+        ) NOT NULL,
+        PRIMARY KEY (auditid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    geofences (
+        accountid text NOT NULL,
+        fleetid text NOT NULL,
+        geofenceid text NOT NULL,
+        geofencename text NOT NULL,
+        isactive bool NOT NULL,
+        geofenceinfo jsonb NOT NULL, -- type, latlngs, radius
+        meta jsonb NOT NULL, -- address, tag, colour
+        createdat bigint default CAST(
+            extract(
+                epoch
+                from
+                    now()
+            ) * 1000 as bigint
+        ) NOT NULL,
+        createdby text NOT NULL,
+        updatedat bigint NOT NULL,
+        updatedby text NOT NULL,
+        primary key (accountid, fleetid, geofenceid),
+        unique (accountid, fleetid, geofencename)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    geofencerules (
+        accountid text NOT NULL,
+        fleetid text NOT NULL,
+        ruleid text NOT NULL,
+        rulename text NOT NULL,
+        ruletypeid int NOT NULL,
+        isactive bool NOT NULL,
+        rulemeta jsonb NOT NULL, -- starttime, endtime  (fixed json struct)
+        createdat bigint default CAST(
+            extract(
+                epoch
+                from
+                    now()
+            ) * 1000 as bigint
+        ) NOT NULL,
+        createdby text NOT NULL,
+        updatedat bigint NOT NULL,
+        updatedby text NOT NULL,
+        primary key (accountid, fleetid, ruleid),
+        unique (accountid, fleetid, rulename)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    geofenceruletypes (
+        ruletypeid int NOT NULL,
+        ruletype text NOT NULL, -- Entry/exit, Route, Trip
+        primary key (ruletypeid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    geofenceruleinfo (
+        accountid text NOT NULL,
+        fleetid text NOT NULL,
+        ruleid text NOT NULL,
+        geofenceid text NOT NULL,
+        seqno int NOT NULL, -- 0 - start, -1 - end
+        actiontypeid int NOT NULL,
+        geofencerulemeta jsonb NOT NULL, -- duration, time, repeats  (fixed json struct)
+        updatedat bigint NOT NULL,
+        updatedby text NOT NULL,
+        primary key (accountid, fleetid, ruleid, geofenceid, seqno)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    rulegeofenceactions (
+        actiontypeid int NOT NULL,
+        actiontype text NOT NULL, -- Entry, Exit, Entry/exit, route
+        primary key (actiontypeid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    geofencerulevehicles (
+        accountid text NOT NULL,
+        fleetid text NOT NULL,
+        ruleid text NOT NULL,
+        vinno text NOT NULL,
+        isexist bool NOT NULL,
+        addedat bigint default CAST(
+            extract(
+                epoch
+                from
+                    now()
+            ) * 1000 as bigint
+        ) NOT NULL,
+        addedby text NOT NULL,
+        primary key (accountid, fleetid, ruleid, vinno),
+        unique (accountid, fleetid, ruleid, vinno, isexist)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    geofencerulefleets (
+        accountid text NOT NULL,
+        fleetid text NOT NULL,
+        ruleid text NOT NULL,
+        subfleetid text NOT NULL,
+        isexist bool NOT NULL,
+        inclsfleets bool NOT NULL,
+        addedat bigint default CAST(
+            extract(
+                epoch
+                from
+                    now()
+            ) * 1000 as bigint
+        ) NOT NULL,
+        addedby text NOT NULL,
+        updatedat bigint NOT NULL,
+        updatedby text NOT NULL,
+        primary key (accountid, fleetid, ruleid, subfleetid),
+        unique (accountid, fleetid, ruleid, subfleetid, isexist)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    geofenceruleusers (
+        accountid text NOT NULL,
+        fleetid text NOT NULL,
+        ruleid text NOT NULL,
+        userid text NOT NULL,
+        isexist bool NOT NULL,
+        alertmeta jsonb NOT NULL, -- emailnot, pushnot
+        addedat bigint default CAST(
+            extract(
+                epoch
+                from
+                    now()
+            ) * 1000 as bigint
+        ) NOT NULL,
+        addedby text NOT NULL,
+        updatedat bigint NOT NULL,
+        updatedby text NOT NULL,
+        primary key (accountid, fleetid, ruleid, userid),
+        unique (accountid, fleetid, ruleid, userid, isexist)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    geofencevehruletrips (
+        accountid text NOT NULL,
+        fleetid text NOT NULL,
+        vinno text NOT NULL,
+        tripstarttime bigint NOT NULL,
+        tripendtime bigint NOT NULL,
+        ruleid text NOT NULL,
+        tripid text NOT NULL,
+        startlat double precision NOT NULL,
+        startlng double precision NOT NULL,
+        endlat double precision NOT NULL,
+        endlng double precision NOT NULL,
+        startodo int NOT NULL,
+        endodo int NOT NULL,
+        startsoc smallint NOT NULL,
+        endsoc smallint NOT NULL,
+        meta jsonb NOT NULL,
+        proctime bigint NOT NULL,
+        primary key (accountid, fleetid, vinno, tripstarttime)
+    );
+
+CREATE INDEX IF NOT EXISTS geofencevehruletrips_idx ON geofencevehruletrips (accountid, fleetid, vinno, ruleid);
+
+CREATE TABLE IF NOT EXISTS
+    geofencerulevehtrips (
+        accountid text NOT NULL,
+        fleetid text NOT NULL,
+        ruleid text NOT NULL,
+        tripstarttime bigint NOT NULL,
+        tripendtime bigint NOT NULL,
+        vinno text NOT NULL,
+        tripid text NOT NULL,
+        startlat double precision NOT NULL,
+        startlng double precision NOT NULL,
+        endlat double precision NOT NULL,
+        endlng double precision NOT NULL,
+        startodo int NOT NULL,
+        endodo int NOT NULL,
+        startsoc smallint NOT NULL,
+        endsoc smallint NOT NULL,
+        meta jsonb NOT NULL,
+        proctime bigint NOT NULL,
+        primary key (accountid, fleetid, ruleid, tripstarttime)
+    );
+
+CREATE INDEX IF NOT EXISTS geofencerulevehtrips_idx ON geofencerulevehtrips (accountid, fleetid, ruleid, vinno);
+
+CREATE TABLE IF NOT EXISTS
+    geofencevehrulealerts (
+        accountid text NOT NULL,
+        fleetid text NOT NULL,
+        vinno text NOT NULL,
+        utctime bigint NOT NULL,
+        ruleid text NOT NULL,
+        alerttype text NOT NULL,
+        odo int NOT NULL,
+        speed smallint NOT NULL,
+        soc smallint NOT NULL,
+        lat double precision NOT NULL,
+        lng double precision NOT NULL,
+        meta jsonb NOT NULL,
+        proctime bigint NOT NULL,
+        primary key (accountid, fleetid, vinno, utctime)
+    );
+
+CREATE INDEX IF NOT EXISTS geofencevehrulealerts_idx ON geofencevehrulealerts (accountid, fleetid, vinno, ruleid);
+
+CREATE TABLE IF NOT EXISTS
+    geofencerulevehalerts (
+        accountid text NOT NULL,
+        fleetid text NOT NULL,
+        ruleid text NOT NULL,
+        utctime bigint NOT NULL,
+        vinno text NOT NULL,
+        alerttype text NOT NULL,
+        odo int NOT NULL,
+        speed smallint NOT NULL,
+        soc smallint NOT NULL,
+        lat double precision NOT NULL,
+        lng double precision NOT NULL,
+        meta jsonb NOT NULL,
+        proctime bigint NOT NULL,
+        primary key (accountid, fleetid, ruleid, utctime)
+    );
+
+CREATE INDEX IF NOT EXISTS geofencerulevehalerts_idx ON geofencerulevehalerts (accountid, fleetid, ruleid, vinno);
+
+CREATE TABLE IF NOT EXISTS
+    routes (
+        accountid text NOT NULL,
+        fleetid text NOT NULL,
+        routeid text NOT NULL,
+        routename text NOT NULL,
+        isactive bool NOT NULL,
+        routeinfo jsonb NOT NULL, -- [ latlngs -> [], deviation, heading ]
+        meta jsonb NOT NULL, -- points { [ name, latlng ] }
+        createdat bigint default CAST(
+            extract(
+                epoch
+                from
+                    now()
+            ) * 1000 as bigint
+        ) NOT NULL,
+        createdby text NOT NULL,
+        updatedat bigint NOT NULL,
+        updatedby text NOT NULL,
+        primary key (accountid, fleetid, routeid),
+        unique (accountid, fleetid, routename)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    trips (
+        accountid text NOT NULL,
+        fleetid text NOT NULL,
+        tripid text NOT NULL,
+        tripname text NOT NULL,
+        routeid text NOT NULL,
+        enblroutetrack bool NOT NULL,
+        isactive bool NOT NULL,
+        meta jsonb NOT NULL, -- starttime, endtime
+        createdat bigint default CAST(
+            extract(
+                epoch
+                from
+                    now()
+            ) * 1000 as bigint
+        ) NOT NULL,
+        createdby text NOT NULL,
+        updatedat bigint NOT NULL,
+        updatedby text NOT NULL,
+        primary key (accountid, fleetid, tripid),
+        unique (accountid, fleetid, tripname)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    tripvehicles (
+        accountid text NOT NULL,
+        fleetid text NOT NULL,
+        tripid text NOT NULL,
+        vinno text NOT NULL,
+        addedat bigint default CAST(
+            extract(
+                epoch
+                from
+                    now()
+            ) * 1000 as bigint
+        ) NOT NULL,
+        addedby text NOT NULL,
+        primary key (accountid, fleetid, tripid, vinno)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    tripfleets (
+        accountid text NOT NULL,
+        fleetid text NOT NULL,
+        tripid text NOT NULL,
+        subfleetid text NOT NULL,
+        inclsfleets bool NOT NULL,
+        addedat bigint default CAST(
+            extract(
+                epoch
+                from
+                    now()
+            ) * 1000 as bigint
+        ) NOT NULL,
+        addedby text NOT NULL,
+        updatedat bigint NOT NULL,
+        updatedby text NOT NULL,
+        primary key (accountid, fleetid, tripid, subfleetid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    tripusers (
+        accountid text NOT NULL,
+        fleetid text NOT NULL,
+        tripid text NOT NULL,
+        userid text NOT NULL,
+        alertmeta jsonb NOT NULL, -- emailnot, pushnot
+        addedat bigint default CAST(
+            extract(
+                epoch
+                from
+                    now()
+            ) * 1000 as bigint
+        ) NOT NULL,
+        addedby text NOT NULL,
+        updatedat bigint NOT NULL,
+        updatedby text NOT NULL,
+        primary key (accountid, fleetid, tripid, userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    gmapapilog (
+        id BIGINT GENERATED BY DEFAULT AS IDENTITY (
+            START
+            WITH
+                1 INCREMENT BY 1
+        ),
+        accountid text NOT NULL,
+        userid text NOT NULL,
+        apiurl text NOT NULL,
+        payload jsonb NOT NULL,
+        response jsonb NOT NULL,
+        updatedat BIGINT default CAST(
+            extract(
+                epoch
+                from
+                    now()
+            ) * 1000 as bigint
+        ) NOT NULL,
+        PRIMARY KEY (id)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    kpvehicles (
+        partition int NOT NULL,
+        vin text NOT NULL,
+        primary key (partition, vin),
+        unique (vin)
+    );

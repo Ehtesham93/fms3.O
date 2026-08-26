@@ -1,0 +1,1155 @@
+{
+  "totalCount": 50,
+  "vehicleModels": [
+    {
+      "modelcode": "treo_zor_163ah_default",
+      "modelname": "Treo_Zor_163AH",
+      "modelvariant": "default",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_zor.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/zor/zor-2025.pdf",
+        "brochurespecs": {
+          "range": "136",
+          "battery_capacity": "8.34",
+          "co2_emission_factor": "94.82",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:13.087Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:51:39.656Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo Zor"
+    },
+    {
+      "modelcode": "zor_fb",
+      "modelname": "Zor",
+      "modelvariant": "FB",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_zor_fb.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/zor/zor-2025.pdf",
+        "brochurespecs": {
+          "range": "80",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "131.61",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:13.406Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:52:27.337Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo Zor"
+    },
+    {
+      "modelcode": "zor_pu",
+      "modelname": "Zor",
+      "modelvariant": "pu",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_zor.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/zor/zor-2025.pdf",
+        "brochurespecs": {
+          "range": "80",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "131.61",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:13.468Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:52:32.481Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo Zor"
+    },
+    {
+      "modelcode": "treo500",
+      "modelname": "Treo200",
+      "modelvariant": "default",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "110",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T13:50:16.463Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:48:52.862Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "treo_default",
+      "modelname": "Treo",
+      "modelvariant": "default",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "110",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:10.510Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:43:13.437Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "treo_eautohtn",
+      "modelname": "Treo",
+      "modelvariant": "EAUTO HT N",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "110",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:10.574Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:44:52.033Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "treo_eautostn",
+      "modelname": "Treo",
+      "modelvariant": "EAUTO ST N",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "110",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:10.635Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:44:58.594Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "zorgrand_default",
+      "modelname": "ZorGrand",
+      "modelvariant": "default",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/zor_grand_pu.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/zor-grand/zor-grand-2025.pdf",
+        "brochurespecs": {
+          "range": "100",
+          "battery_capacity": "10.24",
+          "co2_emission_factor": "131.61",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:13.661Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:52:59.580Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Zor Grand"
+    },
+    {
+      "modelcode": "zorgrand_dv",
+      "modelname": "ZorGrand",
+      "modelvariant": "DV",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/zor_grand_dv.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/zor-grand/zor-grand-2025.pdf",
+        "brochurespecs": {
+          "range": "100",
+          "battery_capacity": "10.24",
+          "co2_emission_factor": "131.61",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:13.888Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:53:05.570Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Zor Grand"
+    },
+    {
+      "modelcode": "a301_default",
+      "modelname": "A301",
+      "modelvariant": "default",
+      "modelfamilycode": "a301",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_plus.png",
+        "modelmanual": "",
+        "brochurespecs": {
+          "range": "243",
+          "battery_capacity": "11.77",
+          "co2_emission_factor": "94.82",
+          "fuel_price_factor": "91.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:09.934Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-25T10:10:58.672Z",
+      "updatedby": "37278e24-eab2-40bf-b552-85077d5ad9bb",
+      "modeldisplayname": "A301"
+    },
+    {
+      "modelcode": "a301_p2",
+      "modelname": "a301",
+      "modelvariant": "P2",
+      "modelfamilycode": "a301",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_plus.png",
+        "modelmanual": "",
+        "brochurespecs": {
+          "range": "243",
+          "battery_capacity": "11.77",
+          "co2_emission_factor": "94.82",
+          "fuel_price_factor": "91.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:09.994Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-27T17:58:49.141Z",
+      "updatedby": "3dfb7780-e571-423d-8b07-69ce758cc8ed",
+      "modeldisplayname": "A301 P2"
+    },
+    {
+      "modelcode": "yaaricart_default",
+      "modelname": "Yaari Cart",
+      "modelvariant": "default",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_yaari_cargo_2.png",
+        "modelmanual": "",
+        "brochurespecs": {
+          "range": "110",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:13.152Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:51:50.472Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo Cart"
+    },
+    {
+      "modelcode": "treoyaari_default",
+      "modelname": "Treo Yaari",
+      "modelvariant": "default",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_yaari.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo-yaari/treo-yaari-2025.pdf",
+        "brochurespecs": {
+          "range": "85",
+          "battery_capacity": "3.685",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:12.762Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:50:19.645Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo Yaari"
+    },
+    {
+      "modelcode": "treoyaari_hrt",
+      "modelname": "Treo Yaari",
+      "modelvariant": "HRT",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_yaari.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo-yaari/treo-yaari-2025.pdf",
+        "brochurespecs": {
+          "range": "85",
+          "battery_capacity": "3.685",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:12.888Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:50:54.043Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo Yaari"
+    },
+    {
+      "modelcode": "zor_default",
+      "modelname": "Zor",
+      "modelvariant": "default",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_zor.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/zor/zor-2025.pdf",
+        "brochurespecs": {
+          "range": "80",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "131.61",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:13.213Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-27T15:02:23.460Z",
+      "updatedby": "37278e24-eab2-40bf-b552-85077d5ad9bb",
+      "modeldisplayname": "Treo Zor"
+    },
+    {
+      "modelcode": "treo_v1",
+      "modelname": "Treo",
+      "modelvariant": "V1",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "110",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:10.952Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:45:16.663Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "treo2.0_default",
+      "modelname": "Treo2.0",
+      "modelvariant": "default",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "110",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:11.010Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:45:24.144Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "treo2.0_dv",
+      "modelname": "Treo2.0",
+      "modelvariant": "dv",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_zor_dv.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "110",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:11.112Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:45:29.624Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "treo_hrt",
+      "modelname": "Treo",
+      "modelvariant": "hrt",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "110",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:10.694Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:45:04.509Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "treo2.0_fb",
+      "modelname": "Treo2.0",
+      "modelvariant": "FB",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_zor_fb.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "110",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:11.243Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:46:42.303Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "treoplus_sft",
+      "modelname": "Treo Plus",
+      "modelvariant": "SFT",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_plus.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo-plus/treo-plus-2025.pdf",
+        "brochurespecs": {
+          "range": "150",
+          "battery_capacity": "10.24",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:12.631Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:49:49.195Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo Plus"
+    },
+    {
+      "modelcode": "treoplus_sftsm",
+      "modelname": "Treo Plus",
+      "modelvariant": "SFT SM",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_plus.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo-plus/treo-plus-2025.pdf",
+        "brochurespecs": {
+          "range": "150",
+          "battery_capacity": "10.24",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:12.698Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:49:55.174Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo Plus"
+    },
+    {
+      "modelcode": "zeo_default",
+      "modelname": "Zeo",
+      "modelvariant": "default",
+      "modelfamilycode": "zeo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/zeo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/zeo.png",
+        "modelmanual": "",
+        "brochurespecs": {
+          "range": "232",
+          "battery_capacity": "21.3",
+          "co2_emission_factor": "129",
+          "fuel_price_factor": "91.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:10.057Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:41:20.407Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Mahindra Zeo"
+    },
+    {
+      "modelcode": "zeo_v1cargo",
+      "modelname": "Zeo",
+      "modelvariant": "V1 CARGO",
+      "modelfamilycode": "zeo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/zeo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/zeo.png",
+        "modelmanual": "",
+        "brochurespecs": {
+          "range": "232",
+          "battery_capacity": "21.3",
+          "co2_emission_factor": "129",
+          "fuel_price_factor": "91.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:10.116Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:41:37.121Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Mahindra Zeo"
+    },
+    {
+      "modelcode": "zeo_v1dv",
+      "modelname": "Zeo",
+      "modelvariant": "V1 DV",
+      "modelfamilycode": "zeo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/zeo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/zeo_dv.png",
+        "modelmanual": "",
+        "brochurespecs": {
+          "range": "232",
+          "battery_capacity": "21.3",
+          "co2_emission_factor": "129",
+          "fuel_price_factor": "91.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:10.180Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:41:44.835Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Mahindra Zeo"
+    },
+    {
+      "modelcode": "zor_dv",
+      "modelname": "Zor",
+      "modelvariant": "DV",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_zor_dv.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/zor/zor-2025.pdf",
+        "brochurespecs": {
+          "range": "80",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "131.61",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:13.346Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:52:21.931Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo Zor"
+    },
+    {
+      "modelcode": "treo_sft",
+      "modelname": "Treo",
+      "modelvariant": "sft",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "110",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:10.826Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:45:11.512Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "treoyaari100ah_default",
+      "modelname": "Treo Yaari 100AH",
+      "modelvariant": "default",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_yaari.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo-yaari/treo-yaari-2025.pdf",
+        "brochurespecs": {
+          "range": "85",
+          "battery_capacity": "3.685",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:13.012Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:51:06.782Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo Yaari"
+    },
+    {
+      "modelcode": "treoyaari_sft",
+      "modelname": "Treo Yaari",
+      "modelvariant": "SFT",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_yaari.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo-yaari/treo-yaari-2025.pdf",
+        "brochurespecs": {
+          "range": "85",
+          "battery_capacity": "3.685",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:12.947Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:51:00.748Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo Yaari"
+    },
+    {
+      "modelcode": "treoyaari_erickstn",
+      "modelname": "Treo Yaari",
+      "modelvariant": "ERICK ST N",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_yaari.png",
+        "modelmanual": "",
+        "brochurespecs": {
+          "range": "85",
+          "battery_capacity": "3.685",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:12.825Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:50:37.334Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo Yaari"
+    },
+    {
+      "modelcode": "treo2.0_hrt",
+      "modelname": "Treo2.0",
+      "modelvariant": "HRT",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "110",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:11.306Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:47:13.914Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "treo2.0_pu",
+      "modelname": "Treo2.0",
+      "modelvariant": "PU",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_yaari_cargo_2.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "110",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:11.458Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:47:20.786Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "zorgrand_dvplus",
+      "modelname": "ZorGrand",
+      "modelvariant": "DVPlus",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/zor_grand_dv.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/zor-grand/zor-grand-2025.pdf",
+        "brochurespecs": {
+          "range": "100",
+          "battery_capacity": "10.24",
+          "co2_emission_factor": "131.61",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:14.085Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:53:28.057Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Zor Grand"
+    },
+    {
+      "modelcode": "zorgrand_pu",
+      "modelname": "ZorGrand",
+      "modelvariant": "PU",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/zor_grand_pu.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/zor-grand/zor-grand-2025.pdf",
+        "brochurespecs": {
+          "range": "100",
+          "battery_capacity": "10.24",
+          "co2_emission_factor": "131.61",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:14.144Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:53:32.618Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Zor Grand"
+    },
+    {
+      "modelcode": "zorgrand_zorgrandfbr",
+      "modelname": "ZorGrand",
+      "modelvariant": "ZOR GRAND FB R",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/zor_grand_pu.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/zor-grand/zor-grand-2025.pdf",
+        "brochurespecs": {
+          "range": "100",
+          "battery_capacity": "10.24",
+          "co2_emission_factor": "131.61",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:14.213Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:53:37.897Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Zor Grand"
+    },
+    {
+      "modelcode": "zeo_v2cargo",
+      "modelname": "Zeo",
+      "modelvariant": "V2 CARGO",
+      "modelfamilycode": "zeo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/zeo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/zeo_dv.png",
+        "modelmanual": "",
+        "brochurespecs": {
+          "range": "232",
+          "battery_capacity": "21.3",
+          "co2_emission_factor": "129",
+          "fuel_price_factor": "91.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:10.238Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:42:05.825Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Mahindra Zeo"
+    },
+    {
+      "modelcode": "zeo_v2dv",
+      "modelname": "Zeo",
+      "modelvariant": "V2 DV",
+      "modelfamilycode": "zeo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/zeo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/zeo_dv.png",
+        "modelmanual": "",
+        "brochurespecs": {
+          "range": "232",
+          "battery_capacity": "21.3",
+          "co2_emission_factor": "129",
+          "fuel_price_factor": "91.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:10.297Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:42:17.645Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Mahindra Zeo"
+    },
+    {
+      "modelcode": "treo2_163ah_163ah",
+      "modelname": "Treo2_163ah",
+      "modelvariant": "163ah",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "136",
+          "battery_capacity": "8.34",
+          "co2_emission_factor": "94.82",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:12.095Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:49:00.907Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "treo2.0_sft",
+      "modelname": "Treo2.0",
+      "modelvariant": "SFT",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "110",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:11.547Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:47:26.900Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "treo2.0_sftsm",
+      "modelname": "Treo2.0",
+      "modelvariant": "SFT SM",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "110",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:11.619Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:47:32.680Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "treo2.0_t20",
+      "modelname": "Treo2.0",
+      "modelvariant": "T20",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_zor.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "110",
+          "battery_capacity": "7.37",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:11.739Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:47:40.589Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "treoplus_default",
+      "modelname": "Treo Plus",
+      "modelvariant": "default",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_plus.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo-plus/treo-plus-2025.pdf",
+        "brochurespecs": {
+          "range": "150",
+          "battery_capacity": "10.24",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:12.496Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:49:32.358Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo Plus"
+    },
+    {
+      "modelcode": "treoplus_hrt",
+      "modelname": "Treo Plus",
+      "modelvariant": "HRT",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo_plus.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo-plus/treo-plus-2025.pdf",
+        "brochurespecs": {
+          "range": "150",
+          "battery_capacity": "10.24",
+          "co2_emission_factor": "73.8",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:12.565Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:49:41.609Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo Plus"
+    },
+    {
+      "modelcode": "zorgrand_dv140",
+      "modelname": "ZorGrand",
+      "modelvariant": "DV140",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/zor_grand_dv.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/zor-grand/zor-grand-2025.pdf",
+        "brochurespecs": {
+          "range": "100",
+          "battery_capacity": "10.24",
+          "co2_emission_factor": "131.61",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:13.948Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:53:10.337Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Zor Grand"
+    },
+    {
+      "modelcode": "zorgrand_dv170",
+      "modelname": "ZorGrand",
+      "modelvariant": "DV170",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/zor_grand_dv.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/zor-grand/zor-grand-2025.pdf",
+        "brochurespecs": {
+          "range": "100",
+          "battery_capacity": "10.24",
+          "co2_emission_factor": "131.61",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:14.014Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:53:21.346Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Zor Grand"
+    },
+    {
+      "modelcode": "zeo_w6",
+      "modelname": "Zeo",
+      "modelvariant": "W6",
+      "modelfamilycode": "zeo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/zeo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/zeo_dv.png",
+        "modelmanual": "",
+        "brochurespecs": {
+          "range": "232",
+          "battery_capacity": "21.3",
+          "co2_emission_factor": "129",
+          "fuel_price_factor": "91.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:10.362Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:42:38.501Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Mahindra Zeo"
+    },
+    {
+      "modelcode": "zeo_wd",
+      "modelname": "Zeo",
+      "modelvariant": "WD",
+      "modelfamilycode": "zeo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/zeo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/zeo_dv.png",
+        "modelmanual": "",
+        "brochurespecs": {
+          "range": "232",
+          "battery_capacity": "21.3",
+          "co2_emission_factor": "129",
+          "fuel_price_factor": "91.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:10.450Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:42:47.602Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Mahindra Zeo"
+    },
+    {
+      "modelcode": "treo2_163ah_default",
+      "modelname": "Treo2_163ah",
+      "modelvariant": "default",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "136",
+          "battery_capacity": "8.34",
+          "co2_emission_factor": "94.82",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:11.949Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:49:07.294Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "treo2_163ah_hrt",
+      "modelname": "Treo2_163ah",
+      "modelvariant": "HRT",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "136",
+          "battery_capacity": "8.34",
+          "co2_emission_factor": "94.82",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:12.152Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:49:13.357Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    },
+    {
+      "modelcode": "treo2_163ah_p2",
+      "modelname": "Treo2_163ah",
+      "modelvariant": "P2",
+      "modelfamilycode": "treo",
+      "modelinfo": {
+        "modelicon": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/map/icons/v1/treo.svg",
+        "modelimage": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-images/primary/small/v1/treo.png",
+        "modelmanual": "https://d8zm4ywgfpzys.cloudfront.net/nemo3-vehicle-manuals/reference-guides/treo/treo/treo-2025.pdf",
+        "brochurespecs": {
+          "range": "136",
+          "battery_capacity": "8.34",
+          "co2_emission_factor": "94.82",
+          "fuel_price_factor": "102.0"
+        }
+      },
+      "isenabled": false,
+      "createdat": "2025-06-25T12:04:12.382Z",
+      "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "updatedat": "2025-07-07T14:49:19.363Z",
+      "updatedby": "e2500964-be53-4d5f-964c-c05804593f91",
+      "modeldisplayname": "Treo"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+id,url,priority,isenabled,category,createdat,updatedat
+BANNER1,https://d15u4dbb8gfonu.cloudfront.net/nemo3-banners/fms-web/2025/banner1.png,1,true,web,Sun Jul 27 2025 08:03:16 GMT+0000 (Coordinated Universal Time),Sun Jul 27 2025 08:03:16 GMT+0000 (Coordinated Universal Time)
+BANNER2,https://d15u4dbb8gfonu.cloudfront.net/nemo3-banners/fms-web/2025/banner2.png,2,false,web,Sun Jul 27 2025 08:03:16 GMT+0000 (Coordinated Universal Time),Sun Jul 27 2025 08:03:16 GMT+0000 (Coordinated Universal Time)
+BANNER3,https://d15u4dbb8gfonu.cloudfront.net/nemo3-banners/fms-web/2025/banner3.png,3,false,web,Sun Jul 27 2025 08:03:16 GMT+0000 (Coordinated Universal Time),Sun Jul 27 2025 08:03:16 GMT+0000 (Coordinated Universal Time)
+BANNER4,https://d15u4dbb8gfonu.cloudfront.net/nemo3-banners/fms-web/2025/banner4.png,4,false,web,Sun Jul 27 2025 08:03:16 GMT+0000 (Coordinated Universal Time),Sun Jul 27 2025 08:03:16 GMT+0000 (Coordinated Universal Time)
+BANNER5,https://d15u4dbb8gfonu.cloudfront.net/nemo3-banners/fms-mobile/2025/banner1.png,5,true,mobile,Sun Jul 27 2025 08:03:16 GMT+0000 (Coordinated Universal Time),Sun Jul 27 2025 08:03:16 GMT+0000 (Coordinated Universal Time)
+BANNER6,https://d15u4dbb8gfonu.cloudfront.net/nemo3-banners/fms-mobile/2025/banner2.png,6,false,mobile,Sun Jul 27 2025 08:03:16 GMT+0000 (Coordinated Universal Time),Sun Jul 27 2025 08:03:16 GMT+0000 (Coordinated Universal Time)
+BANNER7,https://d15u4dbb8gfonu.cloudfront.net/nemo3-banners/fms-mobile/2025/banner3.png,7,false,mobile,Sun Jul 27 2025 08:03:16 GMT+0000 (Coordinated Universal Time),Sun Jul 27 2025 08:03:16 GMT+0000 (Coordinated Universal Time)
+BANNER8,https://d15u4dbb8gfonu.cloudfront.net/nemo3-banners/fms-mobile/2025/banner4.png,8,false,mobile,Sun Jul 27 2025 08:03:16 GMT+0000 (Coordinated Universal Time),Sun Jul 27 2025 08:03:16 GMT+0000 (Coordinated Universal Time)

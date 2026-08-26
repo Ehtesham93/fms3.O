@@ -1,0 +1,434 @@
+-- Credit wallet 
+CREATE TABLE
+    credit_wallet (
+        accountid uuid NOT NULL REFERENCES accounts (accountid) ON DELETE CASCADE,
+        walletid uuid DEFAULT uuid_generate_v4 (),
+        total_credits NUMERIC(20, 3) NOT NULL DEFAULT 0,
+        available_credits NUMERIC(20, 3) NOT NULL DEFAULT 0,
+        reserved_credits NUMERIC(20, 3) NOT NULL DEFAULT 0,
+        credits_expires_at TIMESTAMPTZ DEFAULT (now() + INTERVAL '3 years'),
+        createdby uuid NULL REFERENCES users (userid) ON DELETE CASCADE,
+        createdat TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updatedby uuid NULL REFERENCES users (userid) ON DELETE CASCADE,
+        updatedat TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (accountid, walletid),
+        UNIQUE (walletid)
+    );
+
+CREATE INDEX ix_credit_wallet_id ON credit_wallet (walletid);
+
+-- Monetisation entry
+-- credit_purchase focuses on cash (currency, tax, reconciliation with the bank)
+CREATE TABLE
+    credit_purchase (
+        accountid uuid NOT NULL REFERENCES accounts (accountid) ON DELETE CASCADE,
+        purchaseid uuid DEFAULT uuid_generate_v4 (),
+        credits_purchased NUMERIC(20, 3) NOT NULL,
+        gross_amount NUMERIC(20, 3) NOT NULL,
+        currency CHAR(3) NOT NULL DEFAULT 'INR',
+        invoiceid uuid NULL REFERENCES invoices (invoiceid) ON DELETE CASCADE,
+        status TEXT NOT NULL DEFAULT 'captured' CHECK (
+            status IN (
+                'auth',
+                'captured',
+                'failed',
+                'refunded',
+                'other',
+                'voided',
+                'pending',
+                'expired'
+            )
+        ),
+        paymentinfo jsonb NOT NULL,
+        purchaseinfo jsonb NOT NULL,
+        createdby uuid NULL REFERENCES users (userid) ON DELETE CASCADE,
+        createdat TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updatedby uuid NULL REFERENCES users (userid) ON DELETE CASCADE,
+        updatedat TIMESTAMPTZ NOT NULL DEFAULT now(),
+        captured_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (accountid, purchaseid)
+    );
+
+CREATE INDEX ix_credit_purchase_id ON credit_purchase (purchaseid);
+
+-- Double-entry ledger
+-- credit_transaction focuses on credits (non-monetary internal units) and keeps a complete, append-only audit trail of every change to the wallet balance. Can go to 100M+ rows.
+CREATE TABLE
+    credit_transaction (
+        accountid uuid NOT NULL REFERENCES accounts (accountid) ON DELETE CASCADE,
+        walletid uuid NOT NULL REFERENCES credit_wallet (walletid) ON DELETE CASCADE,
+        txnid uuid DEFAULT uuid_generate_v4 (),
+        txntype TEXT NOT NULL CHECK (
+            txntype IN ('purchase', 'burn', 'refund', 'adjust')
+        ),
+        txninfo jsonb NOT NULL,
+        pkgid uuid NOT NULL REFERENCES subscriptionpkgs (subscriptionpkgid) ON DELETE CASCADE,
+        num_sub_vehicles INTEGER NOT NULL,
+        num_connected_vehicles INTEGER NOT NULL,
+        credit_delta NUMERIC(20, 3) NOT NULL, -- positive in case of purchase, refund; negative in case of burn; positive or negative in case of adjust
+        ref_table TEXT NULL, -- refers to credit_purchase table in case of purchase, refund; null in case of burn, adjust
+        refid uuid NULL REFERENCES credit_purchase (purchaseid) ON DELETE CASCADE, -- purchaseid in case of purchase, refund; null in case of burn, adjust
+        remarks TEXT NULL,
+        createdat TIMESTAMPTZ NOT NULL DEFAULT now(),
+        createdby uuid NOT NULL REFERENCES users (userid) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+        PRIMARY KEY (accountid, walletid, txnid),
+        UNIQUE (txnid),
+        FOREIGN KEY (accountid, walletid) REFERENCES credit_wallet (accountid, walletid) ON DELETE CASCADE
+    );
+
+CREATE INDEX ix_credit_txn_wallet ON credit_transaction (walletid);
+
+CREATE INDEX ix_credit_txn_created ON credit_transaction (createdat DESC);
+
+-- -- Per-vehicle subscription timeline
+-- -- Partition parent
+-- CREATE TABLE
+--     vehicle_subscription (
+--         accountid uuid NOT NULL REFERENCES accounts (accountid) ON DELETE CASCADE,
+--         vehicleid uuid NOT NULL REFERENCES vehicles (vehicleid) ON DELETE CASCADE,
+--         pkgid uuid NOT NULL REFERENCES subscriptionpkgs (subscriptionpkgid) ON DELETE CASCADE,
+--         start_date TIMESTAMPTZ NOT NULL,
+--         end_date TIMESTAMPTZ NULL,
+--         createdby uuid NOT NULL REFERENCES users (userid) ON DELETE CASCADE,
+--         createdat TIMESTAMPTZ NOT NULL DEFAULT now(),
+--         updatedby uuid NOT NULL REFERENCES users (userid) ON DELETE CASCADE,
+--         updatedat TIMESTAMPTZ NOT NULL DEFAULT now(),
+--         PRIMARY KEY (accountid, vsubid)
+--     )
+-- PARTITION BY
+--     HASH (vehicleid);
+-- CREATE INDEX ix_vsub_id ON vehicle_subscription (vsubid);
+-- CREATE INDEX ix_vsub_vehicle ON vehicle_subscription (vehicleid);
+-- CREATE INDEX ix_vsub_active ON vehicle_subscription (vehicleid, end_date)
+-- WHERE
+--     end_date IS NULL;
+-- Example of 32 hash partitions
+-- DO $$
+-- BEGIN
+--   FOR i IN 0..31 LOOP
+--     EXECUTE format('CREATE TABLE vehicle_subscription_p%02s PARTITION OF vehicle_subscription FOR VALUES WITH (MODULUS 32, REMAINDER %s);', i, i);
+--   END LOOP;
+-- END; $$;
+-- -- Fast point lookups
+-- CREATE INDEX ix_vsub_vehicle_active ON vehicle_subscription (vehicleid, end_date)
+-- WHERE
+--     end_date IS NULL;
+-- CREATE INDEX ix_vsub_account_vehicle ON vehicle_subscription (accountid, vehicleid);
+-- Nightly usage burn (batch + optional detail)
+-- job run header
+CREATE TABLE
+    subscription_job_run (
+        accountid uuid NOT NULL REFERENCES accounts (accountid) ON DELETE CASCADE,
+        jobid uuid DEFAULT uuid_generate_v4 (),
+        job_date TIMESTAMPTZ NOT NULL,
+        status TEXT NOT NULL DEFAULT 'running' CHECK (status IN ('running', 'completed', 'failed')),
+        credits_burned NUMERIC(20, 3) DEFAULT 0,
+        started_at TIMESTAMPTZ DEFAULT now(),
+        finished_at TIMESTAMPTZ,
+        PRIMARY KEY (accountid, jobid)
+    );
+
+-- usage_batch (parent → range-partition by job_date)
+CREATE TABLE
+    usage_batch (
+        accountid uuid NOT NULL REFERENCES accounts (accountid) ON DELETE CASCADE,
+        batchid uuid DEFAULT uuid_generate_v4 (),
+        job_date TIMESTAMPTZ NOT NULL,
+        pkgid uuid NOT NULL REFERENCES subscriptionpkgs (subscriptionpkgid) ON DELETE CASCADE,
+        vehicles_count INTEGER NOT NULL,
+        credits_deducted NUMERIC(20, 3) NOT NULL,
+        createdby uuid NULL REFERENCES users (userid) ON DELETE CASCADE,
+        createdat TIMESTAMPTZ NOT NULL DEFAULT now(),
+        processed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (accountid, batchid)
+    )
+PARTITION BY
+    RANGE (job_date);
+
+CREATE INDEX ix_usage_batch_id ON usage_batch (batchid);
+
+CREATE INDEX ix_usage_batch_date ON usage_batch (job_date);
+
+-- NEW account-daily consumption view table
+CREATE TABLE
+    account_daily_consumption (
+        accountid uuid NOT NULL REFERENCES accounts (accountid) ON DELETE CASCADE,
+        acct_dayid uuid DEFAULT uuid_generate_v4 (),
+        usage_date TIMESTAMPTZ NOT NULL,
+        vehicles_included INTEGER NOT NULL,
+        credits_consumed NUMERIC(20, 3) NOT NULL,
+        createdby uuid NULL REFERENCES users (userid) ON DELETE CASCADE,
+        createdat TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updatedby uuid NULL REFERENCES users (userid) ON DELETE CASCADE,
+        updatedat TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (accountid, acct_dayid),
+        CONSTRAINT ux_account_day UNIQUE (accountid, usage_date)
+    )
+PARTITION BY
+    RANGE (usage_date);
+
+-- same monthly partition helper as usage_batch
+-- parent already created earlier: Result ⇒ one child table per month such as account_daily_consumption_2025_04.
+DO $$
+DECLARE
+  d TIMESTAMPTZ := '2025-01-01 00:00:00+00'::TIMESTAMPTZ;
+BEGIN
+  WHILE d < '2030-01-01 00:00:00+00'::TIMESTAMPTZ LOOP
+    EXECUTE format(
+      'CREATE TABLE account_daily_consumption_%s
+         PARTITION OF account_daily_consumption
+         FOR VALUES FROM (%L) TO (%L);',
+      to_char(d, 'yyyy_mm'),
+      d,
+      d + INTERVAL '1 month'
+    );
+    d := d + INTERVAL '1 month';
+  END LOOP;
+END; $$;
+
+/* 2.1  Trigger function */
+/* Every time the nightly job inserts a single row into usage_batch (already aggregated at account × tier level), a trigger immediately upserts the corresponding record in account_daily_consumption.
+Because it operates on one row at a time—and updates exactly one counter row—it runs in O(1) time, regardless of fleet size.*/
+/* If you later decide to keep usage_line, the trigger still fires once per batch, not per vehicle.
+
+The conflict clause turns the operation into a single INSERT … ON CONFLICT UPDATE instead of a read-then-write, keeping it lock-free and performant even with 10 M vehicles. */
+-- Monthly partitions for account_daily_consumption	Keep the table lean and allow cheap archiving.
+-- Function f_acc_daily_upsert()	O(1) aggregation from usage_batch into the daily table.
+-- Trigger trg_usage_batch_to_daily	Hooks function to every insert into usage_batch.
+CREATE
+OR REPLACE FUNCTION f_acc_daily_upsert () RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO account_daily_consumption AS adc (
+    accountid,
+    usage_date,
+    vehicles_included,
+    credits_consumed,
+    createdby,
+    createdat,
+    updatedby,
+    updatedat
+  ) VALUES (
+    NEW.accountid,
+    NEW.job_date,
+    NEW.vehicles_count,
+    NEW.credits_deducted,
+    NEW.createdby,
+    NEW.createdat,
+    NEW.createdby,
+    NEW.createdat
+  )
+  ON CONFLICT (accountid, usage_date)
+  DO UPDATE SET
+    vehicles_included = adc.vehicles_included + NEW.vehicles_count,
+    credits_consumed = adc.credits_consumed + NEW.credits_deducted,
+    updatedby = NEW.createdby,
+    updatedat = now();
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+/* 2.2  Trigger on usage_batch */
+CREATE TRIGGER trg_usage_batch_to_daily
+AFTER INSERT ON usage_batch FOR EACH ROW
+EXECUTE FUNCTION f_acc_daily_upsert ();
+
+-- Notifications / audit 
+CREATE INDEX ix_notification_account_date ON notification_event (accountid, sent_at DESC);
+
+CREATE INDEX ix_audit_entity ON subscription_audit (entity_type, entity_id);
+
+-- Notification Events
+-- A low-balance rule queries credit_wallet.available_credits / burn_rate to raise 30-, 15-, 7-day notices as described in the proposal
+CREATE TABLE
+    notification_event (
+        accountid uuid NOT NULL REFERENCES accounts (accountid) ON DELETE CASCADE,
+        notifid uuid DEFAULT uuid_generate_v4 (),
+        event_type TEXT NOT NULL CHECK (
+            event_type IN (
+                'low_balance',
+                'suspend',
+                'resume',
+                'expiry_warning'
+            )
+        ),
+        severity SMALLINT DEFAULT 1, -- 1=info,2=warn,3=critical
+        data_payload JSONB,
+        sent_at TIMESTAMPTZ,
+        acknowledged_at TIMESTAMPTZ,
+        createdby uuid NULL REFERENCES users (userid) ON DELETE CASCADE,
+        createdat TIMESTAMPTZ NOT NULL DEFAULT now(),
+        updatedby uuid NULL REFERENCES users (userid) ON DELETE CASCADE,
+        updatedat TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (accountid, notifid)
+    );
+
+CREATE INDEX ix_notification_id ON notification_event (notifid);
+
+CREATE INDEX ix_notification_sent ON notification_event (sent_at DESC);
+
+-- System-wide audit table
+-- Row-level triggers on all critical tables write before/after images here—supporting revert / investigation.
+CREATE TABLE
+    subscription_audit (
+        accountid uuid NOT NULL REFERENCES accounts (accountid) ON DELETE CASCADE,
+        auditid uuid DEFAULT uuid_generate_v4 (),
+        entity_type TEXT NOT NULL, -- vehicle_subscription, credit_wallet…
+        entityid uuid NOT NULL,
+        action TEXT NOT NULL, -- insert|update|delete
+        changedby uuid NULL REFERENCES users (userid) ON DELETE CASCADE,
+        changedat TIMESTAMPTZ NOT NULL DEFAULT now(),
+        old_values JSONB,
+        new_values JSONB,
+        PRIMARY KEY (accountid, auditid)
+    );
+
+CREATE INDEX ix_audit_id ON subscription_audit (auditid);
+
+CREATE INDEX ix_audit_entity_lookup ON subscription_audit (entity_type, entityid);
+
+CREATE TABLE IF NOT EXISTS
+    credits (
+        creditid uuid DEFAULT uuid_generate_v4 (),
+        accountid uuid NOT NULL,
+        credittype text NOT NULL,
+        creditamount numeric(10, 2) NOT NULL,
+        creditbalance numeric(10, 2) NOT NULL,
+        creditstatus text NOT NULL,
+        creditinfo jsonb,
+        createdat bigint NOT NULL,
+        createdby text NOT NULL,
+        updatedat bigint NOT NULL,
+        updatedby text NOT NULL,
+        PRIMARY KEY (creditid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    credithistory (
+        credithistoryid uuid DEFAULT uuid_generate_v4 (),
+        creditid uuid NOT NULL,
+        credittype text NOT NULL,
+        creditamount numeric(10, 2) NOT NULL,
+        creditbalance numeric(10, 2) NOT NULL,
+        creditstatus text NOT NULL,
+        creditinfo jsonb,
+        createdat bigint NOT NULL,
+        createdby text NOT NULL,
+        updatedat bigint NOT NULL,
+        updatedby text NOT NULL,
+        PRIMARY KEY (credithistoryid)
+    );
+
+CREATE TABLE
+    credit_wallet_history (
+        accountid uuid NOT NULL,
+        walletid uuid NOT NULL,
+        total_credits NUMERIC(20, 3) NOT NULL,
+        available_credits NUMERIC(20, 3) NOT NULL,
+        reserved_credits NUMERIC(20, 3) NOT NULL,
+        credits_expires_at TIMESTAMPTZ NOT NULL,
+        action TEXT NOT NULL CHECK (action IN ('insert', 'update', 'delete')),
+        changedby uuid NULL REFERENCES users (userid) ON DELETE CASCADE,
+        changedat TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (accountid, walletid, changedat),
+        FOREIGN KEY (accountid, walletid) REFERENCES credit_wallet (accountid, walletid) ON DELETE CASCADE
+    );
+
+-- Create trigger function to track changes
+CREATE
+OR REPLACE FUNCTION credit_wallet_audit_trigger () RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO credit_wallet_history (
+            accountid,
+            walletid,
+            total_credits,
+            available_credits,
+            reserved_credits,
+            credits_expires_at,
+            action,
+            changedby,
+            changedat
+        ) VALUES (
+            NEW.accountid,
+            NEW.walletid,
+            NEW.total_credits,
+            NEW.available_credits,
+            NEW.reserved_credits,
+            NEW.credits_expires_at,
+            'insert',
+            NEW.createdby,
+            NEW.createdat
+        );
+        
+    ELSIF TG_OP = 'UPDATE' THEN
+        -- Only create history entry if relevant fields changed
+        IF (NEW.total_credits != OLD.total_credits OR 
+            NEW.available_credits != OLD.available_credits OR 
+            NEW.reserved_credits != OLD.reserved_credits OR 
+            NEW.credits_expires_at != OLD.credits_expires_at) THEN
+            
+            INSERT INTO credit_wallet_history (
+                accountid,
+                walletid,
+                total_credits,
+                available_credits,
+                reserved_credits,
+                credits_expires_at,
+                action,
+                changedby,
+                changedat
+            ) VALUES (
+                NEW.accountid,
+                NEW.walletid,
+                NEW.total_credits,
+                NEW.available_credits,
+                NEW.reserved_credits,
+                NEW.credits_expires_at,
+                'update',
+                NEW.updatedby,
+                NEW.updatedat
+            );
+        END IF;
+        
+    ELSIF TG_OP = 'DELETE' THEN
+        INSERT INTO credit_wallet_history (
+            accountid,
+            walletid,
+            total_credits,
+            available_credits,
+            reserved_credits,
+            credits_expires_at,
+            action,
+            changedby,
+            changedat
+        ) VALUES (
+            OLD.accountid,
+            OLD.walletid,
+            OLD.total_credits,
+            OLD.available_credits,
+            OLD.reserved_credits,
+            OLD.credits_expires_at,
+            'delete',
+            OLD.updatedby,
+            now()
+        );
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create or replace the triggers
+DROP TRIGGER IF EXISTS trg_usage_batch_to_daily ON usage_batch;
+
+CREATE TRIGGER trg_usage_batch_to_daily
+AFTER INSERT ON usage_batch FOR EACH ROW
+EXECUTE FUNCTION f_acc_daily_upsert ();
+
+DROP TRIGGER IF EXISTS trg_credit_wallet_audit ON credit_wallet;
+
+CREATE TRIGGER trg_credit_wallet_audit
+AFTER INSERT
+OR
+UPDATE
+OR DELETE ON credit_wallet FOR EACH ROW
+EXECUTE FUNCTION credit_wallet_audit_trigger ();

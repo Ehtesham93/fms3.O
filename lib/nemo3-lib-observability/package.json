@@ -1,0 +1,24 @@
+{
+  "name": "nemo3-observability",
+  "version": "1.0.0",
+  "description": "Easy Metrics and Logging Library",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["metrics", "logging", "observability"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "tail": "^2.2.6"
+  },
+  "files": [
+    "index.js",
+    "metrics.js",
+    "log-rotator.js"
+  ]
+}

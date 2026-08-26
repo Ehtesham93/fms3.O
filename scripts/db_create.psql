@@ -1,0 +1,2033 @@
+SELECT
+    NOW();
+
+SHOW search_path;
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Drop pg_trgm if it exists (in any schema) and recreate in public schema
+DROP EXTENSION IF EXISTS pg_trgm CASCADE;
+CREATE EXTENSION pg_trgm SCHEMA public;
+
+CREATE TABLE IF NOT EXISTS
+    users (
+        userid uuid NOT NULL,
+        displayname text NOT NULL,
+        usertype text,
+        userinfo jsonb NOT NULL,
+        isenabled boolean NOT NULL,
+        isdeleted boolean NOT NULL,
+        isemailverified boolean NOT NULL,
+        ismobileverified boolean NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        acceptedterms jsonb DEFAULT '{}'::jsonb NOT NULL,
+        PRIMARY KEY (userid),
+        FOREIGN KEY (createdby) REFERENCES users (userid) DEFERRABLE INITIALLY DEFERRED,
+        FOREIGN KEY (updatedby) REFERENCES users (userid) DEFERRABLE INITIALLY DEFERRED
+    );
+
+CREATE TABLE IF NOT EXISTS
+    reviewpendinguser (
+        userid uuid NOT NULL,
+        displayname text NOT NULL,
+        usertype text,
+        email text,
+        gender text,
+        mobile text,
+        address text,
+        city text,
+        country text,
+        pincode text,
+        dateofbirth date,
+        vehiclemobile text,
+        userinfo jsonb NOT NULL,
+        isenabled boolean NOT NULL,
+        isdeleted boolean NOT NULL,
+        isemailverified boolean NOT NULL,
+        ismobileverified boolean NOT NULL,
+        acceptedterms jsonb DEFAULT '{}'::jsonb NOT NULL,
+        original_input jsonb NOT NULL,
+        error_status text NOT NULL,
+        status text NOT NULL, -- 'PENDING_EMAIL_VERIFICATION', 'PENDING_ADMIN_APPROVAL', 'PENDING_CONFLICT_REVIEW', etc.
+        reason text NOT NULL, -- Detailed reason for pending review
+        review_data jsonb NOT NULL, -- Original input data and conflict details
+        discard boolean NOT NULL DEFAULT false,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (userid),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    reviewdoneuser (
+        userid uuid NOT NULL,
+        displayname text NOT NULL,
+        usertype text,
+        email text,
+        gender text,
+        mobile text,
+        address text,
+        city text,
+        country text,
+        pincode text,
+        dateofbirth date,
+        vehiclemobile text,
+        userinfo jsonb NOT NULL,
+        isenabled boolean NOT NULL,
+        isdeleted boolean NOT NULL,
+        isemailverified boolean NOT NULL,
+        ismobileverified boolean NOT NULL,
+        acceptedterms jsonb DEFAULT '{}'::jsonb NOT NULL,
+        original_input jsonb NOT NULL,
+        original_status text NOT NULL, -- What was the original status when moved from pending
+        resolution_reason text NOT NULL, -- How the review was resolved
+        review_data jsonb NOT NULL, -- Original input data and resolution details
+        entrytype text,
+        reviewed_at timestamptz NOT NULL,
+        reviewed_by uuid NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (userid, reviewed_at), -- Allow multiple reviews for same user
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid),
+        FOREIGN KEY (reviewed_by) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    deleteduser (
+        original_userid uuid NOT NULL,
+        deleteduser_id text NOT NULL,
+        original_user_data jsonb NOT NULL,
+        original_sso_data jsonb NOT NULL,
+        deletedat timestamptz NOT NULL,
+        deletedby uuid NOT NULL,
+        PRIMARY KEY (original_userid),
+        UNIQUE (deleteduser_id),
+        FOREIGN KEY (deletedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    accountcategory (
+        categorycode text NOT NULL,
+        categoryname text NOT NULL,
+        ischargeable boolean DEFAULT false NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (categorycode),
+        UNIQUE (categoryname),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    account (
+        accountid uuid NOT NULL,
+        accountname text NOT NULL,
+        accounttype text NOT NULL, -- 'Customer', 'Platform', 'Internal'
+        accountinfo jsonb NOT NULL,
+        mobile text,
+        accountcategory text DEFAULT 'individual' NOT NULL,
+        isenabled boolean NOT NULL,
+        isdeleted boolean DEFAULT false NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid),
+        UNIQUE (accountname),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid),
+        FOREIGN KEY (accountcategory) REFERENCES accountcategory (categorycode)
+    );
+
+CREATE INDEX IF NOT EXISTS account_createdby_idx ON account (createdby);
+
+CREATE INDEX IF NOT EXISTS account_updatedby_idx ON account (updatedby);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_account_active_createdat_desc ON account (createdat DESC)
+WHERE
+    isdeleted = false;
+
+-- Review tables for account
+CREATE TABLE IF NOT EXISTS
+    reviewpendingaccount (
+        accountid uuid NOT NULL,
+        accountname text NOT NULL,
+        accounttype text NOT NULL, -- 'Customer', 'Platform', 'Internal'
+        accountinfo jsonb NOT NULL,
+        mobile text,
+        isenabled boolean NOT NULL,
+        isdeleted boolean DEFAULT false NOT NULL,
+        original_input jsonb NOT NULL,
+        error_status text NOT NULL,
+        status text NOT NULL, -- 'PENDING_NAME_VERIFICATION', 'PENDING_ADMIN_APPROVAL', 'PENDING_CONFLICT_REVIEW', etc.
+        reason text NOT NULL, -- Detailed reason for pending review
+        review_data jsonb NOT NULL, -- Original input data and conflict details
+        discard boolean NOT NULL DEFAULT false,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    reviewdoneaccount (
+        accountid uuid NOT NULL,
+        accountname text NOT NULL,
+        accounttype text NOT NULL, -- 'Customer', 'Platform', 'Internal'
+        accountinfo jsonb NOT NULL,
+        mobile text,
+        isenabled boolean NOT NULL,
+        isdeleted boolean DEFAULT false NOT NULL,
+        original_input jsonb NOT NULL,
+        original_status text NOT NULL, -- What was the original status when moved from pending
+        resolution_reason text NOT NULL, -- How the review was resolved
+        review_data jsonb NOT NULL, -- Original input data and resolution details
+        entrytype text,
+        reviewed_at timestamptz NOT NULL,
+        reviewed_by uuid NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, reviewed_at), -- Allow multiple reviews for same account
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid),
+        FOREIGN KEY (reviewed_by) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    account_fleet (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        isroot boolean NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid),
+        UNIQUE (fleetid), -- TODO: discuss again. 
+        FOREIGN KEY (accountid) REFERENCES account (accountid) DEFERRABLE INITIALLY DEFERRED,
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_account_fleet_root ON account_fleet (accountid) INCLUDE (fleetid)
+WHERE
+    isroot = true;
+
+CREATE TABLE IF NOT EXISTS
+    fleet_tree (
+        accountid uuid NOT NULL,
+        pfleetid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        name text NOT NULL,
+        isdeleted boolean NOT NULL,
+        fleetinfo jsonb NOT NULL,
+        updatedat timestamptz NOT NULL, -- why there is no createdat? -- we have it in account_fleet table
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, pfleetid, fleetid),
+        UNIQUE (accountid, pfleetid, name),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid) DEFERRABLE INITIALLY DEFERRED,
+        FOREIGN KEY (accountid, pfleetid) REFERENCES account_fleet (accountid, fleetid) DEFERRABLE INITIALLY DEFERRED,
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    perm (
+        permid text NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (permid),
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    module (
+        moduleid uuid NOT NULL,
+        modulename text NOT NULL, -- 'Console', 'Trip Insights', 'Service and Maintenance'
+        moduletype text NOT NULL, -- 'API', 'WEB', 'Platform', 'Mobile' (or should it be 'account'?)
+        modulecode text NOT NULL, -- 'console', 'tripinsights', 'service'
+        moduleinfo jsonb NOT NULL,
+        creditspervehicleday NUMERIC(6, 3) NOT NULL,
+        priority int NOT NULL,
+        isenabled boolean NOT NULL, -- TODO: might need an index on this
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (moduleid),
+        UNIQUE (modulename),
+        UNIQUE (modulecode),
+        UNIQUE (priority),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+-- TODO: might need module type index
+CREATE TABLE IF NOT EXISTS
+    module_perm (
+        moduleid uuid NOT NULL,
+        permid text NOT NULL, -- 'consolemgmt.createaccount', 'tripinsights.viewtripdata', 'servicemgmt.viewmaintenancejobs'
+        isenabled boolean NOT NULL, -- TODO: might need an index on this
+        modperminfo jsonb NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (moduleid, permid),
+        FOREIGN KEY (permid) REFERENCES perm (permid) ON UPDATE CASCADE,
+        FOREIGN KEY (moduleid) REFERENCES module (moduleid) DEFERRABLE INITIALLY DEFERRED,
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    roles (
+        accountid uuid NOT NULL,
+        roleid uuid NOT NULL,
+        rolename text NOT NULL, -- We can check on rolename inside API code. Ex: SUPER_ADMIN, CUSTOMER_ADMIN_L2, CUSTOMER_ADMIN_L1, DEALER_ADMIN
+        roletype text NOT NULL, -- platform/account (from console page it will always be platform)
+        isenabled boolean NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, roleid),
+        UNIQUE (accountid, rolename),
+        FOREIGN KEY (accountid) REFERENCES account (accountid),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+-- TODO: might need role type index
+CREATE TABLE IF NOT EXISTS
+    role_perm (
+        accountid uuid NOT NULL,
+        roleid uuid NOT NULL,
+        permid text NOT NULL, -- granular permissions. for platform roles, this will be moduleids
+        isenabled boolean NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (accountid, roleid, permid),
+        FOREIGN KEY (accountid, roleid) REFERENCES roles (accountid, roleid),
+        FOREIGN KEY (permid) REFERENCES perm (permid) ON UPDATE CASCADE,
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    fleet_user_role (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        userid uuid NOT NULL,
+        roleid uuid NOT NULL,
+        assignedat timestamptz NOT NULL,
+        assignedby uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid, userid, roleid), -- TODO: why there are no assignedat and assignedby etc..?
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (userid) REFERENCES users (userid),
+        FOREIGN KEY (accountid, roleid) REFERENCES roles (accountid, roleid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    package_type (
+        pkgtype text NOT NULL, -- 'account --> default', 'custom' (no concept of platform type packages)
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (pkgtype),
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    package (
+        pkgid uuid NOT NULL,
+        pkgname text NOT NULL, -- Account: Standard, Pro, Enterprise, Custom: MySuperPackage1, MyUltraSuperPackage2
+        pkgtype text NOT NULL,
+        pkginfo jsonb NOT NULL,
+        isenabled boolean NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (pkgid),
+        UNIQUE (pkgname),
+        FOREIGN KEY (pkgtype) REFERENCES package_type (pkgtype),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    package_module (
+        pkgid uuid NOT NULL,
+        moduleid uuid NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (pkgid, moduleid),
+        FOREIGN KEY (pkgid) REFERENCES package (pkgid),
+        FOREIGN KEY (moduleid) REFERENCES module (moduleid),
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    module_history (
+        moduleid uuid NOT NULL,
+        modulename text NOT NULL,
+        moduletype text NOT NULL,
+        modulecode text NOT NULL,
+        moduleinfo jsonb NOT NULL,
+        creditspervehicleday NUMERIC(6, 3) NOT NULL,
+        priority int NOT NULL,
+        isenabled boolean NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        action text NOT NULL,
+        previousstate jsonb NOT NULL,
+        currentstate jsonb NOT NULL,
+        PRIMARY KEY (moduleid, updatedat)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    module_perm_history (
+        moduleid uuid NOT NULL,
+        permid text NOT NULL,
+        isenabled boolean NOT NULL,
+        modperminfo jsonb NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        action text NOT NULL,
+        PRIMARY KEY (moduleid, permid, updatedat)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    package_history (
+        pkgid uuid NOT NULL,
+        pkgname text NOT NULL,
+        pkgtype text NOT NULL,
+        pkginfo jsonb NOT NULL,
+        isenabled boolean NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        previousstate jsonb NOT NULL,
+        currentstate jsonb NOT NULL,
+        action text NOT NULL,
+        PRIMARY KEY (pkgid, updatedat)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    package_module_history (
+        pkgid uuid NOT NULL,
+        moduleid uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        action text NOT NULL,
+        PRIMARY KEY (pkgid, moduleid, updatedat)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    role_history (
+        roleid uuid NOT NULL,
+        rolename text NOT NULL,
+        roletype text NOT NULL,
+        isenabled boolean NOT NULL,
+        action text NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        previousstate jsonb NOT NULL,
+        currentstate jsonb NOT NULL,
+        accountid uuid NOT NULL,
+        PRIMARY KEY (roleid, updatedat)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    role_perm_history (
+        accountid uuid NOT NULL,
+        roleid uuid NOT NULL,
+        permid text NOT NULL,
+        isenabled boolean NOT NULL,
+        action text NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (roleid, permid, updatedat)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    fleet_user_role_history(
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        userid uuid NOT NULL,
+        roleid uuid NOT NULL,
+        isenabled boolean NOT NULL,
+        action text NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (fleetid, roleid, userid, updatedat)
+    );
+
+
+CREATE TABLE IF NOT EXISTS
+    account_custom_package_options (
+        accountid uuid NOT NULL,
+        pkgid uuid NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (accountid, pkgid),
+        FOREIGN KEY (accountid) REFERENCES account (accountid),
+        FOREIGN KEY (pkgid) REFERENCES package (pkgid),
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    account_package_subscription (
+        accountid uuid NOT NULL,
+        pkgid uuid NOT NULL,
+        subscriptioninfo jsonb NOT NULL, -- number of vehicles, startdate, enddate, discountpercent, billablecredits, billablecost
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (accountid),
+        FOREIGN KEY (accountid) REFERENCES account (accountid),
+        FOREIGN KEY (pkgid) REFERENCES package (pkgid),
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+-- TODO: get review
+CREATE TABLE IF NOT EXISTS
+    account_package_subscription_history (
+        accountid uuid NOT NULL,
+        pkgid uuid NOT NULL,
+        subscriptioninfo jsonb NOT NULL, -- number of vehicles, startdate, enddate, discountpercent, billablecredits, billablecost
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (accountid, createdat),
+        FOREIGN KEY (accountid) REFERENCES account (accountid),
+        FOREIGN KEY (pkgid) REFERENCES package (pkgid),
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    vehicle_modelfamily (
+        modelfamilycode text NOT NULL,
+        modelfamilyname text NOT NULL,
+        modelfamilyinfo json DEFAULT '{}'::json,
+        isenabled boolean DEFAULT true,
+        createdat timestamp with time zone NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamp with time zone NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (modelfamilycode),
+        UNIQUE (modelfamilyname),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    vehicle_model (
+        modelcode text NOT NULL,
+        modelname text NOT NULL,
+        modelvariant text NOT NULL,
+        modelfamilycode text NOT NULL,
+        modelinfo JSON DEFAULT '{}'::JSON, -- {info_window_img: 'url', google_map_icon: 'url'}
+        isenabled BOOLEAN DEFAULT TRUE,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        modeldisplayname text DEFAULT ''::text NOT NULL,
+        PRIMARY KEY (modelcode),
+        UNIQUE (modelname, modelvariant),
+        FOREIGN KEY (modelfamilycode) REFERENCES vehicle_modelfamily (modelfamilycode) ON UPDATE CASCADE,
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    paramfamily (
+        paramfamilycode text NOT NULL,
+        paramfamilyname text NOT NULL,
+        paramfamilyinfo JSON DEFAULT '{}'::JSON,
+        isenabled BOOLEAN DEFAULT TRUE,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (paramfamilycode),
+        UNIQUE (paramfamilyname),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    paramfamily_param (
+        paramfamilycode text NOT NULL,
+        paramcode text NOT NULL,
+        paramname text NOT NULL,
+        paraminfo JSON DEFAULT '{}'::JSON,
+        isenabled BOOLEAN DEFAULT TRUE,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (paramfamilycode, paramcode),
+        UNIQUE (paramfamilycode, paramname),
+        FOREIGN KEY (paramfamilycode) REFERENCES paramfamily (paramfamilycode),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    vehicle_modelfamily_param (
+        modelfamilycode text NOT NULL,
+        paramfamilycode text NOT NULL,
+        paramcode text NOT NULL,
+        paramvalue text NOT NULL,
+        odozeroprocessing boolean NOT NULL DEFAULT true,
+        isenabled boolean DEFAULT true,
+        createdat timestamp with time zone NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamp with time zone NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (modelfamilycode, paramfamilycode, paramcode),
+        FOREIGN KEY (modelfamilycode) REFERENCES vehicle_modelfamily (modelfamilycode) ON UPDATE CASCADE,
+        FOREIGN KEY (paramfamilycode, paramcode) REFERENCES paramfamily_param (paramfamilycode, paramcode),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    city (
+        citycode text NOT NULL,
+        cityname text NOT NULL,
+        PRIMARY KEY (citycode),
+        UNIQUE (cityname)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    dealer (
+        dealercode text NOT NULL,
+        dealername text NOT NULL,
+        PRIMARY KEY (dealercode),
+        UNIQUE (dealername)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    color (
+        colorcode text NOT NULL,
+        colorname text NOT NULL,
+        PRIMARY KEY (colorcode),
+        UNIQUE (colorname)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    vehicle (
+        vinno text NOT NULL,
+        vehicleinfo jsonb NOT NULL,
+        createdat timestamp with time zone NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamp with time zone NOT NULL,
+        updatedby uuid NOT NULL,
+        modelcode text DEFAULT 'treo'::text NOT NULL,
+        mobile text,
+        license_plate text,
+        color text,
+        vehicle_city text,
+        dealer text,
+        delivered boolean DEFAULT false,
+        delivered_date timestamp with time zone,
+        data_freq smallint,
+        tgu_model text,
+        tgu_sw_version text,
+        tgu_phone_no text,
+        tgu_imei_no text,
+        engineno text,
+        fueltype text,
+        retailssaledate timestamp with time zone,
+        PRIMARY KEY (vinno),
+        CHECK ((char_length(mobile) >= 7)),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid),
+        FOREIGN KEY (modelcode) REFERENCES vehicle_model (modelcode) ON UPDATE CASCADE ON DELETE RESTRICT,
+        FOREIGN KEY (color) REFERENCES color (colorname),
+        FOREIGN KEY (vehicle_city) REFERENCES city (cityname),
+        FOREIGN KEY (dealer) REFERENCES dealer (dealername)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    vehicle_history (
+        vinno text NOT NULL,
+        vehicleinfo jsonb NOT NULL,
+        modelcode text DEFAULT 'treo'::text NOT NULL,
+        mobile text,
+        license_plate text,
+        color text,
+        vehicle_city text,
+        dealer text,
+        delivered boolean DEFAULT false,
+        delivered_date timestamp with time zone,
+        data_freq smallint,
+        tgu_model text,
+        tgu_sw_version text,
+        tgu_phone_no text,
+        tgu_imei_no text,
+        engineno text,
+        fueltype text,
+        retailssaledate timestamp with time zone,
+        action text NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        previousstate jsonb NOT NULL,
+        currentstate jsonb NOT NULL,
+        PRIMARY KEY (vinno, updatedat),
+        CHECK ((char_length(mobile) >= 7))
+    );
+
+CREATE TABLE IF NOT EXISTS
+    reviewpendingvehicle (
+        vinno text NOT NULL,
+        modelcode text NULL, -- Can be null if model not found
+        vehicleinfo jsonb NOT NULL,
+        vehiclevariant text,
+        vehiclemodel text,
+        mobile text,
+        license_plate text,
+        color text,
+        vehicle_city text,
+        dealer text,
+        delivered boolean,
+        delivered_date timestamp with time zone,
+        data_freq text,
+        tgu_model text,
+        tgu_sw_version text,
+        tgu_phone_no text,
+        tgu_imei_no text,
+        engineno text,
+        fueltype text,
+        retailssaledate timestamp with time zone,
+        original_input jsonb NOT NULL,
+        status text NOT NULL, -- 'PENDING_MODEL_REVIEW', 'PENDING_CONFLICT_REVIEW', etc.
+        reason text NOT NULL, -- Detailed reason for pending review
+        review_data jsonb NOT NULL, -- Original input data and conflict details
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (vinno),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    reviewdonevehicle (
+        vinno text NOT NULL,
+        modelcode text NOT NULL,
+        vehicleinfo jsonb NOT NULL,
+        vehiclevariant text,
+        vehiclemodel text,
+        mobile text,
+        license_plate text,
+        color text,
+        vehicle_city text,
+        dealer text,
+        delivered boolean,
+        delivered_date timestamp with time zone,
+        data_freq text,
+        tgu_model text,
+        tgu_sw_version text,
+        tgu_phone_no text,
+        tgu_imei_no text,
+        engineno text,
+        fueltype text,
+        retailssaledate timestamp with time zone,
+        original_input jsonb NOT NULL,
+        original_status text NOT NULL, -- What was the original status when moved from pending
+        resolution_reason text NOT NULL, -- How the review was resolved
+        review_data jsonb NOT NULL, -- Original input data and resolution details
+        entrytype text,
+        reviewed_at timestamptz NOT NULL,
+        reviewed_by uuid NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (vinno, reviewed_at), -- Allow multiple reviews for same vehicle
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid),
+        FOREIGN KEY (reviewed_by) REFERENCES users (userid),
+        FOREIGN KEY (modelcode) REFERENCES vehicle_model (modelcode)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    tagged_vehicle (
+        srcaccountid uuid NOT NULL,
+        vinno text NOT NULL,
+        dstaccountid uuid NOT NULL,
+        isactive boolean NOT NULL,
+        allow_retag boolean NOT NULL,
+        taggedat timestamptz NOT NULL,
+        taggedby uuid NOT NULL,
+        PRIMARY KEY (srcaccountid, vinno, dstaccountid),
+        FOREIGN KEY (srcaccountid) REFERENCES account (accountid),
+        FOREIGN KEY (vinno) REFERENCES vehicle (vinno),
+        FOREIGN KEY (dstaccountid) REFERENCES account (accountid),
+        FOREIGN KEY (taggedby) REFERENCES users (userid)
+    );
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_tagged_vehicle_dstaccountid ON tagged_vehicle (dstaccountid) INCLUDE (srcaccountid, vinno);
+
+CREATE TABLE IF NOT EXISTS
+    tagged_vehicle_history (
+        srcaccountid uuid NOT NULL,
+        vinno text NOT NULL,
+        dstaccountid uuid NOT NULL,
+        isactive boolean NOT NULL,
+        allow_retag boolean NOT NULL,
+        taggedat timestamptz NOT NULL,
+        taggedby uuid NOT NULL,
+        PRIMARY KEY (srcaccountid, vinno, dstaccountid, taggedat),
+        FOREIGN KEY (srcaccountid, vinno, dstaccountid) REFERENCES tagged_vehicle (srcaccountid, vinno, dstaccountid),
+        FOREIGN KEY (taggedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    fleet_vehicle (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        vinno text NOT NULL,
+        isowner boolean NOT NULL,
+        accvininfo jsonb NOT NULL,
+        assignedat timestamptz NOT NULL,
+        assignedby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid, vinno),
+        UNIQUE (accountid, vinno),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (vinno) REFERENCES vehicle (vinno),
+        FOREIGN KEY (assignedby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    fleet_vehicle_history (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        vinno text NOT NULL,
+        isowner boolean NOT NULL,
+        accvininfo jsonb NOT NULL,
+        assignedat timestamptz NOT NULL,
+        assignedby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        action text DEFAULT 'ADDED'::text NOT NULL,
+        PRIMARY KEY (accountid, fleetid, vinno, updatedat),
+        FOREIGN KEY (assignedby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    account_vehicle_subscription (
+        accountid uuid NOT NULL,
+        vinno text NOT NULL,
+        startsat timestamptz NOT NULL,
+        endsat timestamptz NULL,
+        lockedtill timestamptz NULL,
+        subscriptioninfo jsonb NOT NULL,
+        state smallint NOT NULL, -- 0: pending, 1: active, 2: staged_for_disable, 3: disabled
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, vinno),
+        FOREIGN KEY (accountid, vinno) REFERENCES fleet_vehicle (accountid, vinno),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    account_vehicle_subscription_history (
+        accountid uuid NOT NULL,
+        vinno text NOT NULL,
+        isowner boolean NOT NULL DEFAULT false,
+        startsat timestamptz NOT NULL,
+        endsat timestamptz NULL,
+        subscriptioninfo jsonb NOT NULL,
+        state smallint NOT NULL, -- 0: pending, 1: active, 2: staged_for_disable, 3: disabled
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, vinno, updatedat),
+        FOREIGN KEY (accountid) REFERENCES account (accountid),
+        FOREIGN KEY (vinno) REFERENCES vehicle (vinno),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    account_credits (
+        accountid uuid NOT NULL,
+        credits NUMERIC(10, 3) NOT NULL,
+        PRIMARY KEY (accountid),
+        FOREIGN KEY (accountid) REFERENCES account (accountid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    account_credits_history (
+        accountid uuid NOT NULL,
+        targetdate timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        deltacredits NUMERIC(10, 3) NOT NULL,
+        closingcredits NUMERIC(10, 3) NOT NULL,
+        pkginfo jsonb NOT NULL,
+        txninfo jsonb NOT NULL,
+        totalvehicles int NOT NULL,
+        subscribedvehicles int NOT NULL,
+        connectedvehicles int NOT NULL,
+        comment text NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, targetdate, updatedat),
+        FOREIGN KEY (accountid) REFERENCES account (accountid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    account_credits_consumption_vehdetail (
+        accountid uuid NOT NULL,
+        targetdate timestamptz NOT NULL,
+        vinno text NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (accountid, targetdate, vinno),
+        -- FOREIGN KEY (accountid, targetdate) REFERENCES account_credits_history (accountid, targetdate),
+        FOREIGN KEY (vinno) REFERENCES vehicle (vinno), -- TODO: do we have to add another accountid, vinno FK?
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    user_sso (
+        userid uuid NOT NULL,
+        ssotype text NOT NULL,
+        ssoid text NOT NULL,
+        updatedat timestamptz NOT NULL, -- TODO: why there are no createdat?
+        PRIMARY KEY (userid, ssotype),
+        UNIQUE (ssotype, ssoid),
+        FOREIGN KEY (userid) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    email_pwd_sso (
+        ssoid text NOT NULL,
+        password text NOT NULL,
+        userid uuid NOT NULL,
+        ssoinfo jsonb NOT NULL,
+        passwordexpireat timestamptz,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL, -- TODO: why there are no updatedby and createdby?
+        PRIMARY KEY (ssoid),
+        FOREIGN KEY (userid) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    mobile_sso (
+        ssoid text NOT NULL,
+        userid uuid NOT NULL,
+        ssoinfo jsonb NOT NULL,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (ssoid),
+        FOREIGN KEY (userid) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    mahindra_sso (
+        ssoid text NOT NULL,
+        userid uuid NOT NULL,
+        ssoinfo jsonb NOT NULL,
+        secondaryssoid text NOT NULL,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (ssoid),
+        UNIQUE (secondaryssoid),
+        FOREIGN KEY (userid) REFERENCES users (userid)
+    );
+
+CREATE SEQUENCE pending_email_id_seq START
+WITH
+    1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1;
+
+CREATE TABLE IF NOT EXISTS
+    pending_email (
+        id bigint NOT NULL DEFAULT nextval('pending_email_id_seq'),
+        email jsonb NOT NULL,
+        nextattempt timestamptz NOT NULL,
+        nretriespending int NOT NULL,
+        PRIMARY KEY (id)
+    );
+
+CREATE SEQUENCE pending_mobile_id_seq START
+WITH
+    1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1;
+
+CREATE TABLE IF NOT EXISTS
+    pending_mobile (
+        id bigint NOT NULL DEFAULT nextval('pending_mobile_id_seq'),
+        mobile jsonb NOT NULL,
+        nextattempt timestamptz NOT NULL,
+        nretriespending int NOT NULL,
+        PRIMARY KEY (id)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    email_verify (
+        verifyid uuid NOT NULL,
+        userid uuid NOT NULL,
+        expiresat timestamptz NOT NULL,
+        info jsonb NOT NULL,
+        isused boolean NOT NULL,
+        operationtype text NOT NULL, -- 'VERIFY', 'FP', 'CHANGE'
+        PRIMARY KEY (verifyid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    mobile_verify (
+        verifyid uuid NOT NULL,
+        userid uuid NOT NULL,
+        otp text NOT NULL,
+        expiresat timestamptz NOT NULL,
+        info jsonb NOT NULL,
+        isused boolean NOT NULL,
+        operationtype text NOT NULL, -- 'VERIFY', 'FP', 'CHANGE'
+        PRIMARY KEY (verifyid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    fleet_invite_pending (
+        inviteid uuid NOT NULL,
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        contact text NOT NULL, -- email or mobile
+        roleid uuid NOT NULL,
+        invitetype text NOT NULL,
+        invitestatus text NOT NULL,
+        expiresat timestamptz NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        inviteduserid uuid DEFAULT NULL,
+        PRIMARY KEY (inviteid),
+        UNIQUE (accountid, fleetid, contact, roleid, createdat),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+
+CREATE TABLE IF NOT EXISTS
+    fleet_invite_done (
+        inviteid uuid NOT NULL,
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        contact text NOT NULL, -- email or mobile
+        roleid uuid NOT NULL,
+        invitetype text NOT NULL,
+        invitestatus text NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        inviteduserid uuid NOT NULL,
+        PRIMARY KEY (inviteid),
+        UNIQUE (accountid, fleetid, contact, roleid, createdat),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    kconsumer (
+        kconsumerid text NOT NULL,
+        kconsumermeta jsonb NOT NULL,
+        createdat timestamp with time zone NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamp with time zone NOT NULL,
+        updatedby uuid NOT NULL,
+        CONSTRAINT kconsumer_pkey PRIMARY KEY (kconsumerid),
+        CONSTRAINT kconsumer_createdby_fkey FOREIGN KEY (createdby) REFERENCES users (userid),
+        CONSTRAINT kconsumer_updatedby_fkey FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    user_fleet (
+        userid uuid NOT NULL,
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        PRIMARY KEY (userid, accountid, fleetid),
+        FOREIGN KEY (userid) REFERENCES users (userid), -- todo: why there are no assignedat and assignedby etc..?
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    public_api_audit_log (
+        auditid bigint NOT NULL,
+        endpoint text NOT NULL,
+        method text NOT NULL,
+        statuscode smallint NOT NULL,
+        issuccess boolean NOT NULL,
+        requestkey text,
+        requestvalue text,
+        requestbody jsonb,
+        responsebody jsonb,
+        errorcode text,
+        ipaddress inet,
+        useragent text,
+        referer text,
+        requestid text,
+        processingtimems integer,
+        captchavalidated boolean DEFAULT FALSE,
+        createdat timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (auditid)
+    );
+
+CREATE SEQUENCE sos_contacts_contactid_seq AS integer START
+WITH
+    1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1;
+
+CREATE TABLE IF NOT EXISTS
+    sos_contacts (
+        contactid integer NOT NULL DEFAULT nextval('sos_contacts_contactid_seq'),
+        contactname text NOT NULL,
+        contactmobile text NOT NULL,
+        contactemail text,
+        priority smallint DEFAULT 1 NOT NULL,
+        isactive boolean DEFAULT true NOT NULL,
+        CONSTRAINT sos_contacts_pkey PRIMARY KEY (contactid),
+        CONSTRAINT valid_email CHECK (
+            (
+                (contactemail IS NULL)
+                OR (contactemail ~ '^[^\s@]+@[^\s@]+\.[^\s@]+$'::text)
+            )
+        ),
+        CONSTRAINT valid_priority CHECK (
+            (
+                (priority >= 1)
+                AND (priority <= 5)
+            )
+        )
+    );
+
+CREATE TABLE IF NOT EXISTS
+    documents (
+        id text NOT NULL, -- 'PRIVACY', 'TERMS', 'SAFETY', etc.
+        url text NOT NULL,
+        priority integer NOT NULL,
+        isenabled boolean NOT NULL DEFAULT true,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (id),
+        UNIQUE (priority)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    banners (
+        id text NOT NULL, -- 'TERMS', 'PRIVACY', 'PROMOTIONS', etc.
+        url text NOT NULL,
+        priority integer NOT NULL,
+        isenabled boolean NOT NULL DEFAULT true,
+        category text,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (id),
+        UNIQUE (priority)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    user_mpin (
+        userid uuid NOT NULL,
+        mpin text NOT NULL,
+        isenabled boolean NOT NULL DEFAULT true,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (userid),
+        FOREIGN KEY (userid) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    api_keys (
+        platform text NOT NULL, -- 'web', 'ios', 'android'
+        environment text NOT NULL, -- 'stg', 'dev', 'prod'
+        keyname text NOT NULL,
+        value text NOT NULL,
+        isenabled boolean NOT NULL DEFAULT true,
+        PRIMARY KEY (platform, environment, keyname)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    user_login_security (
+        userid uuid NOT NULL,
+        lastvalidlogin timestamptz,
+        lastinvalidlogin timestamptz,
+        consecutivefailedcount integer DEFAULT 0 NOT NULL,
+        islocked boolean DEFAULT false NOT NULL,
+        lockeduntil timestamptz,
+        createdat timestamptz NOT NULL DEFAULT now(),
+        updatedat timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (userid),
+        FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE
+    );
+
+CREATE SEQUENCE IF NOT EXISTS user_login_audit_id_seq START
+WITH
+    1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1;
+
+CREATE TABLE IF NOT EXISTS
+    user_login_audit (
+        auditid bigint NOT NULL DEFAULT nextval('user_login_audit_id_seq'),
+        userid uuid NOT NULL,
+        ssotype text NOT NULL, -- 'email', 'mobile', 'mpin'
+        loginattempt text NOT NULL, -- 'SUCCESS', 'FAILURE'
+        failurereason text, -- 'INVALID_CREDENTIALS', 'INVALID_OTP', 'INVALID_MPIN', 'ACCOUNT_LOCKED', etc.
+        ipaddress inet,
+        useragent text,
+        devicefingerprint text,
+        createdat timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (auditid),
+        FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE
+    );
+
+CREATE INDEX IF NOT EXISTS idx_user_login_security_locked ON user_login_security (userid, islocked, lockeduntil);
+
+CREATE INDEX IF NOT EXISTS idx_user_login_security_lockeduntil ON user_login_security (lockeduntil)
+WHERE
+    islocked = true;
+
+CREATE INDEX IF NOT EXISTS idx_user_login_audit_userid_createdat ON user_login_audit (userid, createdat DESC);
+
+CREATE INDEX IF NOT EXISTS idx_user_login_audit_ssotype_createdat ON user_login_audit (ssotype, createdat DESC);
+
+CREATE INDEX IF NOT EXISTS idx_user_login_audit_loginattempt ON user_login_audit (loginattempt);
+
+CREATE TABLE IF NOT EXISTS
+    account_summary (
+        accountid uuid NOT NULL,
+        users int NOT NULL DEFAULT 0,
+        vehicles int NOT NULL DEFAULT 0,
+        subscribed int NOT NULL DEFAULT 0,
+        packagename text NOT NULL DEFAULT 'Lite',
+        PRIMARY KEY (accountid),
+        UNIQUE (accountid),
+        FOREIGN KEY (accountid) REFERENCES account (accountid) INITIALLY DEFERRED
+    );
+
+CREATE TABLE IF NOT EXISTS
+    vehicle_alert (
+        alertcode text NOT NULL,
+        alertseverity text NOT NULL, -- low, medium, high, critical
+        alertname text NOT NULL,
+        alertinfo JSON DEFAULT '{}'::JSON,
+        isenabled BOOLEAN DEFAULT TRUE,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (alertcode, alertseverity),
+        UNIQUE (alertname)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    dst_code (
+        dstcode text NOT NULL,
+        dstname text NOT NULL,
+        dstinfo JSON DEFAULT '{}',
+        isenabled BOOLEAN DEFAULT TRUE,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (dstcode),
+        UNIQUE (dstname)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    vehicle_model_alert_dst (
+        modelcode text NOT NULL,
+        alertcode text NOT NULL,
+        alertseverity text NOT NULL, -- low, medium, high, critical
+        dstcode text NOT NULL,
+        isenabled BOOLEAN DEFAULT TRUE,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (modelcode, alertcode, alertseverity, dstcode),
+        FOREIGN KEY (alertcode, alertseverity) REFERENCES vehicle_alert (alertcode, alertseverity),
+        FOREIGN KEY (dstcode) REFERENCES dst_code (dstcode)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    charge_deviation (
+        deviation_code TEXT PRIMARY KEY,
+        deviation_text TEXT NOT NULL
+    );
+
+CREATE TABLE IF NOT EXISTS
+    user_kconsumer (
+        userid uuid NOT NULL,
+        kconsumerid text NOT NULL,
+        assignedat timestamp with time zone NOT NULL,
+        assignedby uuid NOT NULL,
+        CONSTRAINT user_kconsumer_pkey PRIMARY KEY (userid, kconsumerid),
+        CONSTRAINT user_kconsumer_assignedby_fkey FOREIGN KEY (assignedby) REFERENCES users (userid),
+        CONSTRAINT user_kconsumer_kconsumerid_fkey FOREIGN KEY (kconsumerid) REFERENCES kconsumer (kconsumerid) DEFERRABLE INITIALLY DEFERRED,
+        CONSTRAINT user_kconsumer_userid_fkey FOREIGN KEY (userid) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    user_info (
+        userid uuid NOT NULL,
+        address text,
+        addresscity text,
+        addresscountry text,
+        addresspincode text,
+        dateofbirth text,
+        gender text,
+        createdat timestamp with time zone DEFAULT now() NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamp with time zone DEFAULT now() NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (userid),
+        FOREIGN KEY (userid) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    fueltype (
+        fueltypecode text NOT NULL,
+        fueltypename text NOT NULL,
+        PRIMARY KEY (fueltypecode),
+        UNIQUE (fueltypename)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    tgu_sw_version (
+        tgu_sw_version_code text NOT NULL,
+        tgu_sw_version_name text NOT NULL,
+        PRIMARY KEY (tgu_sw_version_code),
+        UNIQUE (tgu_sw_version_name)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    tgu_model (
+        tgu_model_code text NOT NULL,
+        tgu_model_name text NOT NULL,
+        PRIMARY KEY (tgu_model_code),
+        UNIQUE (tgu_model_name)
+    );
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_deleteduser_userid ON deleteduser (deleteduser_id);
+
+CREATE INDEX IF NOT EXISTS idx_package_history_pkgid_updatedat ON package_history (pkgid, updatedat DESC);
+
+CREATE INDEX IF NOT EXISTS idx_package_module_history_pkgid_updatedat ON package_module_history (pkgid, updatedat DESC);
+
+CREATE INDEX IF NOT EXISTS idx_package_module_history_moduleid_updatedat ON package_module_history (moduleid, updatedat DESC);
+
+CREATE INDEX IF NOT EXISTS idx_fleet_tree_accountid_fleetid_isdeleted ON fleet_tree (accountid, fleetid, isdeleted);
+
+CREATE INDEX IF NOT EXISTS idx_fleet_tree_accountid_pfleetid_isdeleted ON fleet_tree (accountid, pfleetid, isdeleted);
+
+CREATE INDEX IF NOT EXISTS idx_fleet_vehicles_vinno ON fleet_vehicle (vinno);
+
+CREATE INDEX IF NOT EXISTS idx_email_pwd_sso_userid ON email_pwd_sso (userid);
+
+CREATE INDEX IF NOT EXISTS idx_mobile_sso_userid ON mobile_sso (userid);
+
+CREATE INDEX IF NOT EXISTS idx_public_api_audit_createdat ON public_api_audit_log (createdat DESC);
+
+CREATE INDEX IF NOT EXISTS idx_public_api_audit_endpoint ON public_api_audit_log (endpoint);
+
+CREATE INDEX IF NOT EXISTS idx_public_api_audit_endpoint_date ON public_api_audit_log (endpoint, createdat DESC);
+
+CREATE INDEX IF NOT EXISTS idx_public_api_audit_ip ON public_api_audit_log (ipaddress);
+
+CREATE INDEX IF NOT EXISTS idx_public_api_audit_key_endpoint ON public_api_audit_log (requestkey, endpoint);
+
+CREATE INDEX IF NOT EXISTS idx_public_api_audit_key_value ON public_api_audit_log (requestkey, requestvalue);
+
+CREATE INDEX IF NOT EXISTS idx_public_api_audit_requestkey ON public_api_audit_log (requestkey);
+
+CREATE INDEX IF NOT EXISTS idx_public_api_audit_requestvalue ON public_api_audit_log (requestvalue);
+
+CREATE INDEX IF NOT EXISTS idx_public_api_audit_status ON public_api_audit_log (statuscode);
+
+CREATE INDEX IF NOT EXISTS idx_public_api_audit_success ON public_api_audit_log (issuccess);
+
+CREATE INDEX IF NOT EXISTS idx_public_api_audit_value_date ON public_api_audit_log (requestvalue, createdat DESC);
+
+CREATE INDEX IF NOT EXISTS idx_tagged_vehicle_dstaccountid_vinno ON tagged_vehicle (dstaccountid, vinno, srcaccountid);
+
+CREATE INDEX IF NOT EXISTS idx_tagged_vehicle_history_dstaccountid_vinno ON tagged_vehicle_history (dstaccountid, vinno, srcaccountid);
+
+CREATE INDEX IF NOT EXISTS idx_user_kconsumer_kconsumerid ON user_kconsumer (kconsumerid);
+
+CREATE INDEX IF NOT EXISTS idx_userfleet_accountid_fleetid_userid ON user_fleet (accountid, fleetid, userid);
+
+CREATE INDEX IF NOT EXISTS idx_sos_contacts_priority ON sos_contacts (priority);
+
+
+-- Vehicle table indexes for search api
+-- GIN Trigram indexes for text search (case-insensitive ILIKE queries) on vehicle table
+CREATE INDEX CONCURRENTLY idx_vehicle_vinno_trgm 
+ON vehicle USING gin (upper(vinno) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_vehicle_modelcode_trgm 
+ON vehicle USING gin (upper(modelcode) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_vehicle_license_plate_trgm 
+ON vehicle USING gin (upper(license_plate) public.gin_trgm_ops) WHERE license_plate IS NOT NULL;
+
+CREATE INDEX CONCURRENTLY idx_vehicle_dealer_trgm 
+ON vehicle USING gin (upper(dealer) public.gin_trgm_ops) WHERE dealer IS NOT NULL;
+
+CREATE INDEX CONCURRENTLY idx_vehicle_city_trgm 
+ON vehicle USING gin (upper(vehicle_city) public.gin_trgm_ops) WHERE vehicle_city IS NOT NULL;
+
+CREATE INDEX CONCURRENTLY idx_vehicle_color_trgm 
+ON vehicle USING gin (upper(color) public.gin_trgm_ops) WHERE color IS NOT NULL;
+
+-- B-tree indexes for ordering on createdat and updatedat
+CREATE INDEX CONCURRENTLY idx_vehicle_createdat_vinno 
+ON vehicle USING btree (createdat DESC, vinno DESC);
+
+CREATE INDEX CONCURRENTLY idx_vehicle_updatedat_vinno 
+ON vehicle USING btree (updatedat DESC, vinno DESC);
+
+-- Vehicle model table indexes for search api
+-- GIN Trigram indexes for text search (case-insensitive ILIKE queries) on vehicle_model table
+CREATE INDEX CONCURRENTLY idx_vehicle_model_modelname_trgm 
+ON vehicle_model USING gin (upper(modelname) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_vehicle_model_modelvariant_trgm 
+ON vehicle_model USING gin (upper(modelvariant) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_vehicle_model_modeldisplayname_trgm 
+ON vehicle_model USING gin (upper(modeldisplayname) public.gin_trgm_ops);
+
+-- B-tree indexes for ordering on createdat and updatedat
+CREATE INDEX CONCURRENTLY idx_vehicle_model_createdat_modelcode 
+ON vehicle_model USING btree (createdat DESC, modelcode DESC);
+
+CREATE INDEX CONCURRENTLY idx_vehicle_model_updatedat_modelcode 
+ON vehicle_model USING btree (updatedat DESC, modelcode DESC);
+
+
+-- GIN Trigram indexes for text search (case-insensitive ILIKE queries)
+CREATE INDEX CONCURRENTLY idx_rdv_vinno_trgm 
+ON reviewdonevehicle USING gin (upper(vinno) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rdv_modelcode_trgm 
+ON reviewdonevehicle USING gin (upper(modelcode) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rdv_vehiclevariant_trgm 
+ON reviewdonevehicle USING gin (upper(vehiclevariant) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rdv_vehiclemodel_trgm 
+ON reviewdonevehicle USING gin (upper(vehiclemodel) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rdv_mobile_trgm 
+ON reviewdonevehicle USING gin (upper(mobile) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rdv_license_plate_trgm 
+ON reviewdonevehicle USING gin (upper(license_plate) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rdv_color_trgm 
+ON reviewdonevehicle USING gin (upper(color) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rdv_vehicle_city_trgm 
+ON reviewdonevehicle USING gin (upper(vehicle_city) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rdv_dealer_trgm 
+ON reviewdonevehicle USING gin (upper(dealer) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rdv_engineno_trgm 
+ON reviewdonevehicle USING gin (upper(engineno) public.gin_trgm_ops);
+
+-- B-tree index for ordering with included columns (covers the ORDER BY and common SELECT fields)
+CREATE INDEX CONCURRENTLY idx_rdv_updatedat_vinno 
+ON reviewdonevehicle USING btree (updatedat DESC, vinno DESC) 
+INCLUDE (modelcode, vehiclevariant, vehiclemodel, mobile, license_plate, color);
+
+
+-- Indexes for reviewpendingaccount table
+
+-- GIN Trigram indexes for text search (case-insensitive LIKE queries)
+CREATE INDEX CONCURRENTLY idx_rpa_accountname_trgm 
+ON reviewpendingaccount USING gin (upper(accountname) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rpa_mobile_trgm 
+ON reviewpendingaccount USING gin (upper(mobile) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rpa_status_trgm 
+ON reviewpendingaccount USING gin (upper(status) public.gin_trgm_ops);
+
+-- B-tree index for ordering (default orderbyfield is 'createdat')
+CREATE INDEX CONCURRENTLY idx_rpa_createdat_accountid 
+ON reviewpendingaccount USING btree (createdat DESC, accountid DESC) 
+INCLUDE (accountname, mobile, status);
+
+-- Indexes for reviewdoneaccount table
+
+-- GIN Trigram indexes for text search (case-insensitive LIKE queries)
+CREATE INDEX CONCURRENTLY idx_rda_accountname_trgm 
+ON reviewdoneaccount USING gin (upper(accountname) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rda_mobile_trgm 
+ON reviewdoneaccount USING gin (upper(mobile) public.gin_trgm_ops);
+
+-- B-tree index for ordering (default orderbyfield is 'reviewed_at')
+CREATE INDEX CONCURRENTLY idx_rda_reviewed_at_accountid 
+ON reviewdoneaccount USING btree (reviewed_at DESC, accountid DESC) 
+INCLUDE (accountname, mobile, original_status);
+
+-- Indexes for reviewpendinguser table
+
+-- GIN Trigram indexes for text search (case-insensitive LIKE queries)
+CREATE INDEX CONCURRENTLY idx_rpu_displayname_trgm 
+ON reviewpendinguser USING gin (upper(displayname) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rpu_mobile_trgm 
+ON reviewpendinguser USING gin (upper(mobile) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rpu_email_trgm 
+ON reviewpendinguser USING gin (upper(email) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rpu_status_trgm 
+ON reviewpendinguser USING gin (upper(status) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rpu_gender_trgm 
+ON reviewpendinguser USING gin (upper(gender) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rpu_vehiclemobile_trgm 
+ON reviewpendinguser USING gin (upper(vehiclemobile) public.gin_trgm_ops);
+
+-- B-tree index for ordering (default orderbyfield is 'createdat')
+CREATE INDEX CONCURRENTLY idx_rpu_createdat_userid 
+ON reviewpendinguser USING btree (createdat DESC, userid DESC) 
+INCLUDE (displayname, mobile, email, status, gender, vehiclemobile);
+
+-- Indexes for reviewdoneuser table
+
+-- GIN Trigram indexes for text search (case-insensitive LIKE queries)
+CREATE INDEX CONCURRENTLY idx_rdu_displayname_trgm 
+ON reviewdoneuser USING gin (upper(displayname) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rdu_mobile_trgm 
+ON reviewdoneuser USING gin (upper(mobile) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rdu_email_trgm 
+ON reviewdoneuser USING gin (upper(email) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rdu_gender_trgm 
+ON reviewdoneuser USING gin (upper(gender) public.gin_trgm_ops);
+
+CREATE INDEX CONCURRENTLY idx_rdu_vehiclemobile_trgm 
+ON reviewdoneuser USING gin (upper(vehiclemobile) public.gin_trgm_ops);
+
+-- B-tree index for ordering (default orderbyfield is 'reviewed_at')
+CREATE INDEX CONCURRENTLY idx_rdu_reviewed_at_userid 
+ON reviewdoneuser USING btree (reviewed_at DESC, userid DESC) 
+INCLUDE (displayname, mobile, email, gender, vehiclemobile);
+
+
+-- GIN Trigram indexes for text search on account table
+CREATE INDEX CONCURRENTLY idx_account_accountname_trgm 
+ON account USING gin (upper(accountname) public.gin_trgm_ops)
+WHERE accounttype = 'customer' AND isdeleted = false;
+
+-- GIN Trigram indexes for text search on package table
+CREATE INDEX CONCURRENTLY idx_package_pkgname_trgm 
+ON package USING gin (upper(pkgname) public.gin_trgm_ops);
+
+-- GIN Trigram indexes for text search on users table (displayname)
+CREATE INDEX CONCURRENTLY idx_users_displayname_trgm 
+ON users USING gin (upper(displayname) public.gin_trgm_ops)
+WHERE isdeleted = false;
+
+-- GIN Trigram indexes for text search on fleet_vehicle table (vinno)
+CREATE INDEX CONCURRENTLY idx_fleet_vehicle_vinno_trgm 
+ON fleet_vehicle USING gin (upper(vinno) public.gin_trgm_ops);
+
+-- B-tree index for account_credits.credits (for numeric search, though we're casting to text)
+-- Note: For numeric search, a regular btree index is better, but since we're casting to text in the query,
+-- we might want to consider a functional index or just rely on the primary key
+CREATE INDEX CONCURRENTLY idx_account_credits_credits 
+ON account_credits USING btree (credits);
+
+-- B-tree indexes for ordering (already exists for account.createdat, but ensure it's optimized)
+-- The existing index idx_account_active_createdat_desc should work, but we can verify it covers our needs
+
+-- Additional indexes for join performance
+CREATE INDEX CONCURRENTLY idx_account_package_subscription_accountid 
+ON account_package_subscription (accountid);
+
+CREATE INDEX CONCURRENTLY idx_fleet_vehicle_accountid_fleetid 
+ON fleet_vehicle (accountid, fleetid);
+
+CREATE INDEX CONCURRENTLY idx_fleet_user_role_accountid 
+ON fleet_user_role (accountid);
+
+
+-- Indexes for account table (main table - already has createdat index, adding updatedat)
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_account_updatedat_desc 
+ON account (updatedat DESC)
+WHERE accounttype = 'customer' AND isdeleted = false;
+
+-- Indexes for package table
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_package_createdat_desc 
+ON package (createdat DESC)
+WHERE isenabled = true;
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_package_updatedat_desc 
+ON package (updatedat DESC)
+WHERE isenabled = true;
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_updatedat_desc 
+ON users (updatedat DESC)
+WHERE isdeleted = false;
+
+-- Indexes for fleet_vehicle table
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_fleet_vehicle_updatedat_desc 
+ON fleet_vehicle (updatedat DESC);
+
+-- Indexes for account_package_subscription table
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_account_package_subscription_createdat_desc 
+ON account_package_subscription (createdat DESC);
+
+-- Indexes for account_fleet table
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_account_fleet_createdat_desc 
+ON account_fleet (createdat DESC);
+
+
+-- GIN Trigram indexes for text search on users table (displayname/username)
+CREATE INDEX CONCURRENTLY idx_users_displayname_trgm 
+ON users USING gin (upper(displayname) public.gin_trgm_ops)
+WHERE isdeleted = false;
+
+-- GIN Trigram indexes for text search on email_pwd_sso table (email)
+CREATE INDEX CONCURRENTLY idx_email_pwd_sso_ssoid_trgm 
+ON email_pwd_sso USING gin (upper(ssoid) public.gin_trgm_ops);
+
+-- GIN Trigram indexes for text search on mobile_sso table (mobile)
+CREATE INDEX CONCURRENTLY idx_mobile_sso_ssoid_trgm 
+ON mobile_sso USING gin (upper(ssoid) public.gin_trgm_ops);
+
+-- B-tree indexes for ordering on users table (createdat and updatedat)
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_createdat_desc 
+ON users (createdat DESC)
+WHERE isdeleted = false;
+
+-- B-tree indexes for ordering on email_pwd_sso table
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_email_pwd_sso_createdat_desc 
+ON email_pwd_sso (createdat DESC);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_email_pwd_sso_updatedat_desc 
+ON email_pwd_sso (updatedat DESC);
+
+-- B-tree indexes for ordering on mobile_sso table
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_mobile_sso_createdat_desc 
+ON mobile_sso (createdat DESC);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_mobile_sso_updatedat_desc 
+ON mobile_sso (updatedat DESC);
+
+-- Unique indexes
+CREATE UNIQUE INDEX IF NOT EXISTS account_fleet_one_root_per_account ON account_fleet (accountid)
+WHERE
+    (isroot = true);
+
+-- Optimized GIN index for account.accountname matching the query's WHERE clause
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_account_accountname_trgm_enabled 
+ON account USING gin (upper(accountname) public.gin_trgm_ops)
+WHERE isenabled = true AND isdeleted = false;
+
+-- Optimized GIN index for package.pkgname (already exists but ensure it's optimal)
+-- The existing idx_package_pkgname_trgm should work, but we can add a filtered one if needed
+-- CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_package_pkgname_trgm_enabled 
+-- ON package USING gin (upper(pkgname) public.gin_trgm_ops)
+-- WHERE isenabled = true;
+
+-- For the COUNT operations on tagged_vehicle, add B-tree indexes (not GIN, but needed for performance)
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_tagged_vehicle_srcaccountid_active 
+ON tagged_vehicle (srcaccountid) 
+WHERE isactive = true;
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_tagged_vehicle_dstaccountid_active 
+ON tagged_vehicle (dstaccountid) 
+WHERE isactive = true;
+
+-- For JOINs, add B-tree indexes
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_package_module_pkgid 
+ON package_module (pkgid);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_package_module_moduleid 
+ON package_module (moduleid);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_account_package_subscription_pkgid 
+ON account_package_subscription (pkgid);
+
+-- Composite B-tree index for account WHERE clause (filters rows early)
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_account_enabled_deleted 
+ON account (isenabled, isdeleted) 
+WHERE isenabled = true AND isdeleted = false;
+
+-- Composite index for COUNT queries on (accountid, fleetid, userid)
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_fleet_user_role_account_fleet_user 
+ON fleet_user_role (accountid, fleetid, userid);
+
+-- Index for admin check query (accountid, userid, roleid)
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_fleet_user_role_account_user_role 
+ON fleet_user_role (accountid, userid, roleid);
+
+-- Index for account_fleet JOIN (if not exists)
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_account_fleet_account_fleet_root 
+ON account_fleet (accountid, fleetid) 
+WHERE isroot = true;
+
+-- Views
+CREATE OR REPLACE VIEW
+    public_api_call_stats AS
+SELECT
+    endpoint,
+    method,
+    requestkey,
+    count(*) AS total_calls,
+    count(
+        CASE
+            WHEN (issuccess = true) THEN 1
+            ELSE NULL::integer
+        END
+    ) AS success_calls,
+    count(
+        CASE
+            WHEN (issuccess = false) THEN 1
+            ELSE NULL::integer
+        END
+    ) AS failed_calls,
+    round(
+        (
+            (
+                (
+                    count(
+                        CASE
+                            WHEN (issuccess = true) THEN 1
+                            ELSE NULL::integer
+                        END
+                    )
+                )::numeric / (count(*))::numeric
+            ) * (100)::numeric
+        ),
+        2
+    ) AS success_rate_percent,
+    avg(processingtimems) AS avg_processing_time_ms,
+    max(processingtimems) AS max_processing_time_ms,
+    count(DISTINCT requestvalue) AS unique_identifiers,
+    count(DISTINCT ipaddress) AS unique_ips,
+    min(createdat) AS first_call,
+    max(createdat) AS last_call
+FROM
+    public_api_audit_log
+GROUP BY
+    endpoint,
+    method,
+    requestkey
+ORDER BY
+    (count(*)) DESC;
+
+CREATE OR REPLACE VIEW
+    public_api_failed_calls AS
+SELECT
+    auditid,
+    endpoint,
+    method,
+    statuscode,
+    requestkey,
+    requestvalue,
+    errorcode,
+    ipaddress,
+    createdat
+FROM
+    public_api_audit_log
+WHERE
+    (issuccess = false)
+ORDER BY
+    createdat DESC;
+
+CREATE OR REPLACE VIEW
+    public_api_user_activity AS
+SELECT
+    requestkey,
+    requestvalue,
+    count(*) AS total_requests,
+    count(
+        CASE
+            WHEN (issuccess = true) THEN 1
+            ELSE NULL::integer
+        END
+    ) AS successful_requests,
+    count(
+        CASE
+            WHEN (issuccess = false) THEN 1
+            ELSE NULL::integer
+        END
+    ) AS failed_requests,
+    count(DISTINCT endpoint) AS unique_endpoints,
+    count(DISTINCT ipaddress) AS unique_ips,
+    min(createdat) AS first_activity,
+    max(createdat) AS last_activity
+FROM
+    public_api_audit_log
+WHERE
+    (
+        (requestkey IS NOT NULL)
+        AND (requestvalue IS NOT NULL)
+    )
+GROUP BY
+    requestkey,
+    requestvalue
+ORDER BY
+    (count(*)) DESC;
+
+CREATE OR REPLACE VIEW
+    user_login_stats AS
+SELECT
+    ssotype,
+    loginattempt,
+    COUNT(*) as attempt_count,
+    COUNT(DISTINCT userid) as unique_users,
+    DATE_TRUNC('hour', createdat) as hour_bucket
+FROM
+    user_login_audit
+WHERE
+    createdat >= NOW() - INTERVAL '24 hours'
+GROUP BY
+    ssotype,
+    loginattempt,
+    DATE_TRUNC('hour', createdat)
+ORDER BY
+    hour_bucket DESC;
+
+CREATE OR REPLACE VIEW
+    locked_users_summary AS
+SELECT
+    uls.userid,
+    u.displayname,
+    u.usertype,
+    uls.consecutivefailedcount,
+    uls.lastinvalidlogin,
+    uls.lockeduntil,
+    CASE
+        WHEN uls.lockeduntil > NOW() THEN 'LOCKED'
+        ELSE 'UNLOCKED'
+    END as current_status
+FROM
+    user_login_security uls
+    JOIN users u ON uls.userid = u.userid
+WHERE
+    uls.islocked = true
+ORDER BY
+    uls.lastinvalidlogin DESC;
+
+-- Functions
+CREATE
+OR REPLACE FUNCTION get_all_fleets_path_from_root (accountidarg uuid) RETURNS TABLE (
+    accountid uuid,
+    fleetid uuid,
+    fleetname text,
+    path text
+) LANGUAGE sql AS $$
+with recursive children as (
+    select ft.accountid, ft.pfleetid, ft.fleetid, ft.name, ft.name as path, 1 as height from fleet_tree ft
+    JOIN account_fleet af ON ft.accountid = af.accountid AND ft.fleetid = af.fleetid
+    where ft.accountid = accountidarg and af.isroot = true
+
+    union all
+
+    select ft.accountid, ft.pfleetid, ft.fleetid, ft.name, c.path || '/' || ft.name as path,
+           c.height + 1 from fleet_tree ft
+    join children c on ft.accountid = c.accountid and c.fleetid = ft.pfleetid
+)
+select c.accountid, c.fleetid, c.name as fleetname, c.path from children c
+    order by height
+$$;
+
+CREATE
+OR REPLACE FUNCTION get_all_fleets_path_from_root (accountidarg uuid, useridarg uuid) RETURNS TABLE (
+    accountid uuid,
+    fleetid uuid,
+    fleetname text,
+    path text,
+    isroot boolean,
+    createdat timestamptz,
+    createdby uuid
+) LANGUAGE sql AS $$
+with recursive children as (
+    select ft.accountid, ft.pfleetid, ft.fleetid, ft.name, ft.name as path, 1 as height from fleet_tree ft
+    JOIN user_fleet uf ON ft.accountid = uf.accountid AND ft.fleetid = uf.fleetid
+    where ft.accountid = accountidarg and uf.userid = useridarg
+
+    union all
+
+    select ft.accountid, ft.pfleetid, ft.fleetid, ft.name, c.path || '/' || ft.name as path,
+           c.height + 1 from fleet_tree ft
+    join children c on ft.accountid = c.accountid and c.fleetid = ft.pfleetid
+)
+select c.accountid, c.fleetid, c.name as fleetname, c.path, af.isroot, af.createdat, af.createdby from children c
+    JOIN account_fleet af ON c.accountid = af.accountid AND c.fleetid = af.fleetid
+    order by height
+$$;
+
+
+
+CREATE OR REPLACE FUNCTION populate_module_history()
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    module_record RECORD;
+    current_state_jsonb jsonb;
+BEGIN
+    -- Clear existing data 
+    -- DELETE FROM module_history;
+    
+    -- Loop through each module
+    FOR module_record IN 
+        SELECT 
+            moduleid,
+            modulename,
+            moduletype,
+            modulecode,
+            moduleinfo,
+            creditspervehicleday,
+            priority,
+            isenabled,
+            createdat,
+            createdby
+        FROM module
+    LOOP
+        -- Build current state as jsonb object
+        current_state_jsonb := jsonb_build_object(
+            'moduleid', module_record.moduleid,
+            'modulename', module_record.modulename,
+            'moduletype', module_record.moduletype,
+            'modulecode', module_record.modulecode,
+            'moduleinfo', module_record.moduleinfo,
+            'creditspervehicleday', module_record.creditspervehicleday,
+            'priority', module_record.priority,
+            'isenabled', module_record.isenabled
+        );
+        
+        -- Insert history data for this module
+        INSERT INTO module_history (
+            moduleid,
+            modulename,
+            moduletype,
+            modulecode,
+            moduleinfo,
+            creditspervehicleday,
+            priority,
+            isenabled,
+            updatedat,
+            updatedby,
+            action,
+            previousstate,
+            currentstate
+        ) VALUES (
+            module_record.moduleid,
+            module_record.modulename,
+            module_record.moduletype,
+            module_record.modulecode,
+            module_record.moduleinfo,
+            module_record.creditspervehicleday,
+            module_record.priority,
+            module_record.isenabled,
+            module_record.createdat,  -- Use createdat as updatedat for initial entry
+            module_record.createdby,  -- Use createdby as updatedby for initial entry
+            'CREATE',                 -- Action type for initial creation
+            '{}'::jsonb,              -- Empty previous state (no previous state for initial creation)
+            current_state_jsonb       -- Current state with all module fields
+        );
+        
+    END LOOP;
+    
+    RAISE NOTICE 'Module history populated successfully';
+END;
+$$;
+
+-- Execute the function
+SELECT populate_module_history();
+
+
+CREATE OR REPLACE FUNCTION populate_package_history()
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    package_record RECORD;
+    current_state_jsonb jsonb;
+BEGIN
+    -- Clear existing data 
+    -- DELETE FROM package_history;
+    
+    -- Loop through each package
+    FOR package_record IN 
+        SELECT 
+            pkgid,
+            pkgname,
+            pkgtype,
+            pkginfo,
+            isenabled,
+            createdat,
+            createdby
+        FROM package
+    LOOP
+        -- Build current state as jsonb object
+        current_state_jsonb := jsonb_build_object(
+            'pkgid', package_record.pkgid,
+            'pkgname', package_record.pkgname,
+            'pkgtype', package_record.pkgtype,
+            'pkginfo', package_record.pkginfo,
+            'isenabled', package_record.isenabled
+        );
+        
+        -- Insert history data for this package
+        INSERT INTO package_history (
+            pkgid,
+            pkgname,
+            pkgtype,
+            pkginfo,
+            isenabled,
+            updatedat,
+            updatedby,
+            action,
+            previousstate,
+            currentstate
+        ) VALUES (
+            package_record.pkgid,
+            package_record.pkgname,
+            package_record.pkgtype,
+            package_record.pkginfo,
+            package_record.isenabled,
+            package_record.createdat,  -- Use createdat as updatedat for initial entry
+            package_record.createdby,  -- Use createdby as updatedby for initial entry
+            'CREATE',                 -- Action type for initial creation
+            '{}'::jsonb,              -- Empty previous state (no previous state for initial creation)
+            current_state_jsonb       -- Current state with all package fields
+        );
+        
+    END LOOP;
+    
+    RAISE NOTICE 'Package history populated successfully';
+END;
+$$;
+
+-- Execute the function
+SELECT populate_package_history();

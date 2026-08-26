@@ -1,0 +1,132 @@
+pipeline {
+    agent any
+
+    environment {
+        // Define environment variables here
+        ECR_ENDPOINT = 'o6432ewrsdxcvbjl-south-1.amazonaws.com'
+        ECR_REPO = 'lmm-intellicar'
+        ECR_IMAGE_NAME = 'stg-nemo3-api-fms-svc'
+        AWS_CREDENTIALS_ID = 'iooutrerwadszchv'
+        CLUSTER_NAME = 'intellicar-frontend'
+        SERVICE_NAME = 'stg-nemo3-api-fms-svc'
+        TASK_DEFINITION_NAME = 'stg-lmm-intellicar-nemo3-api-fms-svc'
+        CONTAINER_NAME = 'stg-nemo3-api-fms-svc'
+        APP_ENV = 'STAGING'
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '5', artifactNumToKeepStr: '3'))
+    }
+
+    stages {
+
+        stage('Git Checkout') {
+            steps {
+                echo 'Checking out the code...'
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Building the application...'
+                sh 'docker build --build-arg APP_ENV=${APP_ENV} -t ${ECR_ENDPOINT}/${ECR_REPO}:${ECR_IMAGE_NAME}-${GIT_COMMIT} .'
+            }
+        }
+
+        stage('Docker Login and Push to ECR') {
+            steps {
+                script {
+                    docker.withRegistry("https://${ECR_ENDPOINT}", "ecr:ap-south-1:${AWS_CREDENTIALS_ID}") {
+                        echo 'Pushing to ECR...'
+                        sh 'docker push ${ECR_ENDPOINT}/${ECR_REPO}:${ECR_IMAGE_NAME}-${GIT_COMMIT}'
+                    }
+                }
+            }
+        }
+
+        stage('Create Task Definition') {
+            steps {
+                withAWS(credentials: AWS_CREDENTIALS_ID, region: 'ap-south-1') {
+                    // Fetch the current task definition and save it to a file
+                    echo 'Fetching the current task definition...'
+                    sh """
+                        aws ecs describe-task-definition \
+                            --task-definition ${TASK_DEFINITION_NAME} \
+                            --query 'taskDefinition' \
+                            --output json > task-definition.json
+                    """
+
+                    echo 'Cleanup task definition file...'
+                    sh """
+                        jq 'del(.taskDefinitionArn, .revision, .status, .registeredBy, .registeredAt, .requiresAttributes, .compatibilities)' task-definition.json > cleaned-task-definition.json
+                    """
+
+                    echo 'Updating the task definition...'
+                        // Update the container image in the task definition file
+                    sh """
+                        jq '.containerDefinitions[] |= 
+                        if .name == "${CONTAINER_NAME}" then 
+                            .image = "${ECR_ENDPOINT}/${ECR_REPO}:${ECR_IMAGE_NAME}-${GIT_COMMIT}" 
+                        else 
+                            . 
+                        end' cleaned-task-definition.json > updated-task-definition.json
+                    """
+
+                    echo 'Registering the new task definition...'
+                    sh """
+                        aws ecs register-task-definition \
+                            --cli-input-json file://updated-task-definition.json
+                    """
+
+                    echo 'Task definition registered successfully!'
+                }
+            }
+        }
+
+        stage('Update ECS Service') {
+            steps {
+                withAWS(credentials: AWS_CREDENTIALS_ID, region: 'ap-south-1') {
+                    script {
+                        // Get the latest task definition ARN
+                        def taskDefinitionArn = sh(
+                            script: """
+                                aws ecs describe-task-definition \
+                                    --task-definition ${TASK_DEFINITION_NAME} \
+                                    --query 'taskDefinition.taskDefinitionArn' \
+                                    --output text
+                            """,
+                            returnStdout: true
+                        ).trim()
+
+                        echo "New Task Definition ARN: ${taskDefinitionArn}"
+
+                        // Update the ECS service with the new task definition
+                        sh """
+                            aws ecs update-service \
+                                --cluster ${CLUSTER_NAME} \
+                                --service ${SERVICE_NAME} \
+                                --task-definition ${taskDefinitionArn}
+                        """
+
+                        echo 'Service updated successfully!'
+                    }
+                }
+            }
+        }
+        
+    }
+
+    post {
+        always {
+            echo 'Cleaning up workspace...'
+            cleanWs()
+        }
+        success {
+            echo 'Build completed successfully!'
+        }
+        failure {
+            echo 'Build failed!'
+        }
+    }
+}

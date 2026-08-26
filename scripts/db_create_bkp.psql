@@ -1,0 +1,1539 @@
+SELECT
+    NOW();
+
+SHOW search_path;
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+CREATE TABLE IF NOT EXISTS
+    users (
+        userid uuid NOT NULL,
+        displayname text NOT NULL,
+        usertype text,
+        userinfo jsonb NOT NULL,
+        isenabled boolean NOT NULL,
+        isdeleted boolean NOT NULL,
+        isemailverified boolean NOT NULL,
+        ismobileverified boolean NOT NULL,
+        acceptedterms jsonb NOT NULL DEFAULT '{}',
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (userid),
+        FOREIGN KEY (createdby) REFERENCES users (userid) DEFERRABLE INITIALLY DEFERRED,
+        FOREIGN KEY (updatedby) REFERENCES users (userid) DEFERRABLE INITIALLY DEFERRED
+    );
+
+CREATE TABLE IF NOT EXISTS
+    deleteduser (
+        original_userid uuid NOT NULL,
+        deleteduser_id text NOT NULL,
+        original_user_data jsonb NOT NULL,
+        original_sso_data jsonb NOT NULL,
+        deletedat timestamptz NOT NULL,
+        deletedby uuid NOT NULL,
+        PRIMARY KEY (original_userid),
+        UNIQUE (deleteduser_id),
+        FOREIGN KEY (deletedby) REFERENCES users (userid)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_deleteduser_userid ON deleteduser (deleteduser_id);
+
+CREATE TABLE IF NOT EXISTS
+    account (
+        accountid uuid NOT NULL,
+        accountname text NOT NULL,
+        accounttype text NOT NULL, -- 'Customer', 'Platform', 'Internal'
+        accountinfo jsonb NOT NULL,
+        mobile text NOT NULL DEFAULT '0000000000',
+        isenabled boolean NOT NULL,
+        isdeleted boolean NOT NULL DEFAULT false,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid),
+        UNIQUE (accountname),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    account_fleet (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        isroot boolean NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid),
+        UNIQUE (fleetid), -- TODO: discuss again. 
+        FOREIGN KEY (accountid) REFERENCES account (accountid) DEFERRABLE INITIALLY DEFERRED,
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+CREATE UNIQUE INDEX IF NOT EXISTS account_fleet_one_root_per_account ON account_fleet (accountid)
+WHERE
+    isroot = true;
+
+CREATE TABLE IF NOT EXISTS
+    fleet_tree (
+        accountid uuid NOT NULL,
+        pfleetid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        name text NOT NULL,
+        isdeleted boolean NOT NULL,
+        fleetinfo jsonb NOT NULL,
+        updatedat timestamptz NOT NULL, -- why there is no createdat? -- we have it in account_fleet table
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, pfleetid, fleetid),
+        UNIQUE (accountid, pfleetid, name),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid) DEFERRABLE INITIALLY DEFERRED,
+        FOREIGN KEY (accountid, pfleetid) REFERENCES account_fleet (accountid, fleetid) DEFERRABLE INITIALLY DEFERRED,
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_fleet_tree_accountid_pfleetid_isdeleted ON fleet_tree (accountid, pfleetid, isdeleted);
+
+CREATE INDEX IF NOT EXISTS idx_fleet_tree_accountid_fleetid_isdeleted ON fleet_tree (accountid, fleetid, isdeleted);
+
+CREATE TABLE IF NOT EXISTS
+    perm (
+        permid text NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (permid),
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    module (
+        moduleid uuid NOT NULL,
+        modulename text NOT NULL, -- 'Console', 'Trip Insights', 'Service and Maintenance'
+        moduletype text NOT NULL, -- 'API', 'WEB', 'Platform', 'Mobile' (or should it be 'account'?)
+        modulecode text NOT NULL, -- 'console', 'tripinsights', 'service'
+        moduleinfo jsonb NOT NULL,
+        creditspervehicleday NUMERIC(6, 3) NOT NULL,
+        priority int NOT NULL,
+        isenabled boolean NOT NULL, -- TODO: might need an index on this
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (moduleid),
+        UNIQUE (modulename),
+        UNIQUE (modulecode),
+        UNIQUE (priority),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+-- TODO: might need module type index
+CREATE TABLE IF NOT EXISTS
+    module_perm (
+        moduleid uuid NOT NULL,
+        permid text NOT NULL, -- 'consolemgmt.createaccount', 'tripinsights.viewtripdata', 'servicemgmt.viewmaintenancejobs'
+        isenabled boolean NOT NULL, -- TODO: might need an index on this
+        modperminfo jsonb NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (moduleid, permid),
+        FOREIGN KEY (permid) REFERENCES perm (permid) ON UPDATE CASCADE,
+        FOREIGN KEY (moduleid) REFERENCES module (moduleid) DEFERRABLE INITIALLY DEFERRED,
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    roles (
+        accountid uuid NOT NULL,
+        roleid uuid NOT NULL,
+        rolename text NOT NULL, -- We can check on rolename inside API code. Ex: SUPER_ADMIN, CUSTOMER_ADMIN_L2, CUSTOMER_ADMIN_L1, DEALER_ADMIN
+        roletype text NOT NULL, -- platform/account (from console page it will always be platform)
+        isenabled boolean NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, roleid),
+        UNIQUE (accountid, rolename),
+        FOREIGN KEY (accountid) REFERENCES account (accountid),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+-- TODO: might need role type index
+CREATE TABLE IF NOT EXISTS
+    role_perm (
+        accountid uuid NOT NULL,
+        roleid uuid NOT NULL,
+        permid text NOT NULL, -- granular permissions. for platform roles, this will be moduleids
+        isenabled boolean NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (accountid, roleid, permid),
+        FOREIGN KEY (accountid, roleid) REFERENCES roles (accountid, roleid),
+        FOREIGN KEY (permid) REFERENCES perm (permid) ON UPDATE CASCADE,
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    fleet_user_role (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        userid uuid NOT NULL,
+        roleid uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid, userid, roleid), -- TODO: why there are no assignedat and assignedby etc..?
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (userid) REFERENCES users (userid),
+        FOREIGN KEY (accountid, roleid) REFERENCES roles (accountid, roleid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    package_type (
+        pkgtype text NOT NULL, -- 'account --> default', 'custom' (no concept of platform type packages)
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (pkgtype),
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    package (
+        pkgid uuid NOT NULL,
+        pkgname text NOT NULL, -- Account: Standard, Pro, Enterprise, Custom: MySuperPackage1, MyUltraSuperPackage2
+        pkgtype text NOT NULL,
+        pkginfo jsonb NOT NULL,
+        isenabled boolean NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (pkgid),
+        UNIQUE (pkgname),
+        FOREIGN KEY (pkgtype) REFERENCES package_type (pkgtype),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    package_module (
+        pkgid uuid NOT NULL,
+        moduleid uuid NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (pkgid, moduleid),
+        FOREIGN KEY (pkgid) REFERENCES package (pkgid),
+        FOREIGN KEY (moduleid) REFERENCES module (moduleid),
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    account_custom_package_options (
+        accountid uuid NOT NULL,
+        pkgid uuid NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (accountid, pkgid),
+        FOREIGN KEY (accountid) REFERENCES account (accountid),
+        FOREIGN KEY (pkgid) REFERENCES package (pkgid),
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    account_package_subscription (
+        accountid uuid NOT NULL,
+        pkgid uuid NOT NULL,
+        subscriptioninfo jsonb NOT NULL, -- number of vehicles, startdate, enddate, discountpercent, billablecredits, billablecost
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (accountid),
+        FOREIGN KEY (accountid) REFERENCES account (accountid),
+        FOREIGN KEY (pkgid) REFERENCES package (pkgid),
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+-- TODO: get review
+CREATE TABLE IF NOT EXISTS
+    account_package_subscription_history (
+        accountid uuid NOT NULL,
+        pkgid uuid NOT NULL,
+        subscriptioninfo jsonb NOT NULL, -- number of vehicles, startdate, enddate, discountpercent, billablecredits, billablecost
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (accountid, createdat),
+        FOREIGN KEY (accountid) REFERENCES account (accountid),
+        FOREIGN KEY (pkgid) REFERENCES package (pkgid),
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    vehicle_modelfamily (
+        modelfamilycode text NOT NULL,
+        modelfamilyname text NOT NULL,
+        modelfamilyinfo JSON DEFAULT '{}',
+        isenabled BOOLEAN DEFAULT TRUE,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (modelfamilycode),
+        UNIQUE (modelfamilyname),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    vehicle_model (
+        modelcode text NOT NULL,
+        modelname text NOT NULL,
+        modelvariant text NOT NULL,
+        modelfamilycode text NOT NULL,
+        modelinfo JSON DEFAULT '{}', -- {info_window_img: 'url', google_map_icon: 'url'}
+        isenabled BOOLEAN DEFAULT TRUE,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (modelcode),
+        UNIQUE (modelname, modelvariant),
+        FOREIGN KEY (modelfamilycode) REFERENCES vehicle_modelfamily (modelfamilycode) ON UPDATE CASCADE,
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    paramfamily (
+        paramfamilycode text NOT NULL,
+        paramfamilyname text NOT NULL,
+        paramfamilyinfo JSON DEFAULT '{}',
+        isenabled BOOLEAN DEFAULT TRUE,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (paramfamilycode),
+        UNIQUE (paramfamilyname),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    paramfamily_param (
+        paramfamilycode text NOT NULL,
+        paramcode text NOT NULL,
+        paramname text NOT NULL,
+        paraminfo JSON DEFAULT '{}',
+        isenabled BOOLEAN DEFAULT TRUE,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (paramfamilycode, paramcode),
+        UNIQUE (paramfamilycode, paramname),
+        FOREIGN KEY (paramfamilycode) REFERENCES paramfamily (paramfamilycode),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    vehicle_modelfamily_param (
+        modelfamilycode text NOT NULL,
+        paramfamilycode text NOT NULL,
+        paramcode text NOT NULL,
+        paramvalue text NOT NULL,
+        isenabled BOOLEAN DEFAULT TRUE,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (modelfamilycode, paramfamilycode, paramcode),
+        FOREIGN KEY (modelfamilycode) REFERENCES vehicle_modelfamily (modelfamilycode) ON UPDATE CASCADE,
+        FOREIGN KEY (paramfamilycode, paramcode) REFERENCES paramfamily_param (paramfamilycode, paramcode),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    vehicle (
+        vinno text NOT NULL,
+        mobileno text NOT NULL,
+        modelcode text NOT NULL,
+        vehicleinfo jsonb NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (vinno),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid),
+        FOREIGN KEY (modelcode) REFERENCES vehicle_model (modelcode)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    tagged_vehicle (
+        srcaccountid uuid NOT NULL,
+        vinno text NOT NULL,
+        dstaccountid uuid NOT NULL,
+        isactive boolean NOT NULL,
+        allow_retag boolean NOT NULL,
+        taggedat timestamptz NOT NULL,
+        taggedby uuid NOT NULL,
+        PRIMARY KEY (srcaccountid, vinno, dstaccountid),
+        FOREIGN KEY (srcaccountid) REFERENCES account (accountid),
+        FOREIGN KEY (vinno) REFERENCES vehicle (vinno),
+        FOREIGN KEY (dstaccountid) REFERENCES account (accountid),
+        FOREIGN KEY (taggedby) REFERENCES users (userid)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_tagged_vehicle_dstaccountid_vinno ON tagged_vehicle (dstaccountid, vinno, srcaccountid);
+
+CREATE TABLE IF NOT EXISTS
+    tagged_vehicle_history (
+        srcaccountid uuid NOT NULL,
+        vinno text NOT NULL,
+        dstaccountid uuid NOT NULL,
+        isactive boolean NOT NULL,
+        allow_retag boolean NOT NULL,
+        taggedat timestamptz NOT NULL,
+        taggedby uuid NOT NULL,
+        PRIMARY KEY (srcaccountid, vinno, dstaccountid, taggedat),
+        FOREIGN KEY (srcaccountid, vinno, dstaccountid) REFERENCES tagged_vehicle (srcaccountid, vinno, dstaccountid),
+        FOREIGN KEY (taggedby) REFERENCES users (userid)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_tagged_vehicle_history_dstaccountid_vinno ON tagged_vehicle_history (dstaccountid, vinno, srcaccountid);
+
+CREATE TABLE IF NOT EXISTS
+    fleet_vehicle (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        vinno text NOT NULL,
+        isowner boolean NOT NULL,
+        accvininfo jsonb NOT NULL,
+        assignedat timestamptz NOT NULL,
+        assignedby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid, vinno),
+        UNIQUE (accountid, vinno),
+        UNIQUE (accountid, regno),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (vinno) REFERENCES vehicle (vinno),
+        FOREIGN KEY (assignedby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    fleet_vehicle_history (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        vinno text NOT NULL,
+        isowner boolean NOT NULL,
+        accvininfo jsonb NOT NULL,
+        assignedat timestamptz NOT NULL,
+        assignedby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid, vinno, updatedat),
+        FOREIGN KEY (accountid, fleetid, vinno) REFERENCES fleet_vehicle (accountid, fleetid, vinno),
+        FOREIGN KEY (assignedby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_fleet_vehicle_history_accountid_vinno_fleetid ON fleet_vehicle_history (accountid, vinno, fleetid);
+
+CREATE TABLE IF NOT EXISTS
+    account_vehicle_subscription (
+        accountid uuid NOT NULL,
+        vinno text NOT NULL,
+        startsat timestamptz NOT NULL,
+        endsat timestamptz NULL,
+        lockedtill timestamptz NULL,
+        subscriptioninfo jsonb NOT NULL,
+        state smallint NOT NULL, -- 0: pending, 1: active, 2: staged_for_disable, 3: disabled
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, vinno),
+        FOREIGN KEY (accountid, vinno) REFERENCES fleet_vehicle (accountid, vinno),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    account_vehicle_subscription_history (
+        accountid uuid NOT NULL,
+        vinno text NOT NULL,
+        startsat timestamptz NOT NULL,
+        endsat timestamptz NULL,
+        subscriptioninfo jsonb NOT NULL,
+        state smallint NOT NULL, -- 0: pending, 1: active, 2: staged_for_disable, 3: disabled
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, vinno, updatedat),
+        FOREIGN KEY (accountid) REFERENCES account (accountid),
+        FOREIGN KEY (vinno) REFERENCES vehicle (vinno),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    account_credits_consumption_history (
+        accountid uuid NOT NULL,
+        creditusagedate date NOT NULL,
+        numvehicles int NOT NULL,
+        pkgcost NUMERIC(10, 3) NOT NULL,
+        txninfo jsonb NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, creditusagedate),
+        FOREIGN KEY (accountid) REFERENCES account (accountid),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    account_credits_consumption_vehdetail (
+        accountid uuid NOT NULL,
+        creditusagedate date NOT NULL,
+        vinno text NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        PRIMARY KEY (accountid, creditusagedate, vinno),
+        FOREIGN KEY (accountid, creditusagedate) REFERENCES account_credits_consumption_history (accountid, creditusagedate),
+        FOREIGN KEY (vinno) REFERENCES vehicle (vinno),
+        FOREIGN KEY (createdby) REFERENCES users (userid)
+    );
+
+-- TODO: get review
+CREATE TABLE IF NOT EXISTS
+    account_credits (
+        accountid uuid NOT NULL,
+        useablecredits NUMERIC(10, 3) NOT NULL,
+        lockedcredits NUMERIC(10, 3) NOT NULL,
+        PRIMARY KEY (accountid),
+        FOREIGN KEY (accountid) REFERENCES account (accountid)
+    );
+
+-- TODO: also, do credit history at vehicle level
+-- TODO: get review
+CREATE TABLE IF NOT EXISTS
+    account_credits_history (
+        accountid uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        useablecredits NUMERIC(10, 3) NOT NULL,
+        lockedcredits NUMERIC(10, 3) NOT NULL,
+        comment text NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, updatedat),
+        FOREIGN KEY (accountid) REFERENCES account (accountid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    user_sso (
+        userid uuid NOT NULL,
+        ssotype text NOT NULL,
+        ssoid text NOT NULL,
+        updatedat timestamptz NOT NULL, -- TODO: why there are no createdat?
+        PRIMARY KEY (userid, ssotype),
+        UNIQUE (ssotype, ssoid),
+        FOREIGN KEY (userid) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    email_pwd_sso (
+        ssoid text NOT NULL,
+        password text NOT NULL,
+        userid uuid NOT NULL,
+        ssoinfo jsonb NOT NULL,
+        passwordexpireat timestamptz NOT NULL,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL, -- TODO: why there are no updatedby and createdby?
+        PRIMARY KEY (ssoid),
+        FOREIGN KEY (userid) REFERENCES users (userid)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_email_pwd_sso_userid ON email_pwd_sso (userid);
+
+CREATE TABLE IF NOT EXISTS
+    mobile_sso (
+        ssoid text NOT NULL,
+        userid uuid NOT NULL,
+        ssoinfo jsonb NOT NULL,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (ssoid),
+        FOREIGN KEY (userid) REFERENCES users (userid)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_mobile_sso_userid ON mobile_sso (userid);
+
+CREATE TABLE IF NOT EXISTS
+    pending_email (
+        id BIGSERIAL PRIMARY KEY, -- TODO: should this be uuid?
+        email jsonb NOT NULL,
+        nextattempt timestamptz NOT NULL,
+        nretriespending int NOT NULL
+    );
+
+CREATE TABLE IF NOT EXISTS
+    pending_mobile (
+        id BIGSERIAL PRIMARY KEY, -- TODO: should this be uuid?
+        mobile jsonb NOT NULL,
+        nextattempt timestamptz NOT NULL,
+        nretriespending int NOT NULL
+    );
+
+CREATE TABLE IF NOT EXISTS
+    email_verify (
+        verifyid uuid NOT NULL,
+        userid uuid NOT NULL,
+        expiresat timestamptz NOT NULL,
+        info jsonb NOT NULL,
+        isused boolean NOT NULL,
+        operationtype text NOT NULL, -- 'VERIFY', 'FP', 'CHANGE'
+        PRIMARY KEY (verifyid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    mobile_verify (
+        verifyid uuid NOT NULL,
+        userid uuid NOT NULL,
+        otp text NOT NULL,
+        expiresat timestamptz NOT NULL,
+        info jsonb NOT NULL,
+        isused boolean NOT NULL,
+        operationtype text NOT NULL, -- 'VERIFY', 'FP', 'CHANGE'
+        PRIMARY KEY (verifyid)
+    );
+
+-- COMMENT: this table is removed on 12-08-2025(not usefull)
+-- CREATE TABLE IF NOT EXISTS
+--     fleet_invite_email ( -- TODO: should we also have fleet_invite_mobile?
+--         accountid uuid NOT NULL,
+--         fleetid uuid NOT NULL,
+--         inviteid uuid NOT NULL,
+--         email text NOT NULL,
+--         expiresat timestamptz NOT NULL, -- TODO: expiry can get upodated in resend invite flow. so, need updatedat and by
+--         userid uuid DEFAULT NULL,
+--         PRIMARY KEY (accountid, fleetid, inviteid, email),
+--         UNIQUE (inviteid),
+--         FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid)
+--     );
+-- COMMENT: this table columns are changed on 12-08-2025
+-- CREATE TABLE IF NOT EXISTS
+--     fleet_invite_pending (
+--         accountid uuid NOT NULL,
+--         fleetid uuid NOT NULL,
+--         inviteid uuid NOT NULL,
+--         info jsonb NOT NULL,
+--         invitetype text NOT NULL, -- will be 0 for email, 1 for mobile and so on...
+--         invitestatus text NOT NULL,
+--         createdat timestamptz NOT NULL,
+--         createdby uuid NOT NULL,
+--         updatedat timestamptz NOT NULL,
+--         updatedby uuid NOT NULL,
+--         userid uuid DEFAULT NULL,
+--         PRIMARY KEY (accountid, fleetid, inviteid),
+--         UNIQUE (inviteid),
+--         FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+--         FOREIGN KEY (createdby) REFERENCES users (userid),
+--         FOREIGN KEY (updatedby) REFERENCES users (userid)
+--     );
+-- CREATE TABLE IF NOT EXISTS
+--     fleet_invite_done (
+--         accountid uuid NOT NULL,
+--         fleetid uuid NOT NULL,
+--         inviteid uuid NOT NULL,
+--         info jsonb NOT NULL, -- role will go here
+--         invitetype text NOT NULL, -- will be 0 for userid, 1 for emailid and so on...
+--         invitestatus text NOT NULL,
+--         isexternal boolean NOT NULL,
+--         createdat timestamptz NOT NULL,
+--         createdby uuid NOT NULL,
+--         updatedat timestamptz NOT NULL,
+--         updatedby uuid NOT NULL,
+--         userid uuid DEFAULT NULL,
+--         PRIMARY KEY (accountid, fleetid, inviteid),
+--         UNIQUE (inviteid),
+--         FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+--         FOREIGN KEY (createdby) REFERENCES users (userid),
+--         FOREIGN KEY (updatedby) REFERENCES users (userid)
+--     );
+CREATE TABLE IF NOT EXISTS
+    fleet_invite_pending (
+        inviteid uuid NOT NULL,
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        contact text NOT NULL, -- email or mobile
+        roleid uuid NOT NULL,
+        invitetype text NOT NULL,
+        invitestatus text NOT NULL,
+        expiresat timestamptz NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        inviteduserid uuid DEFAULT NULL,
+        PRIMARY KEY (inviteid),
+        UNIQUE (accountid, fleetid, contact, roleid),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    fleet_invite_done (
+        inviteid uuid NOT NULL,
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        contact text NOT NULL, -- email or mobile
+        roleid uuid NOT NULL,
+        invitetype text NOT NULL,
+        invitestatus text NOT NULL,
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        inviteduserid uuid NOT NULL,
+        PRIMARY KEY (inviteid),
+        UNIQUE (accountid, fleetid, contact, roleid),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid),
+    );
+
+CREATE TABLE IF NOT EXISTS
+    user_fleet (
+        userid uuid NOT NULL,
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        PRIMARY KEY (userid, accountid, fleetid),
+        FOREIGN KEY (userid) REFERENCES users (userid), -- todo: why there are no assignedat and assignedby etc..?
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_userfleet_accountid_fleetid_userid ON user_fleet (accountid, fleetid, userid);
+
+-- functions v2
+CREATE
+OR REPLACE FUNCTION get_all_fleets_path_from_root (accountidarg uuid, useridarg uuid) RETURNS TABLE (
+    accountid uuid,
+    fleetid uuid,
+    fleetname text,
+    path text,
+    isroot boolean,
+    createdat timestamptz,
+    createdby uuid
+) language sql as $$
+with recursive children as (
+
+    select ft.accountid, ft.pfleetid, ft.fleetid, ft.name, ft.name as path, 1 as height from fleet_tree ft
+    JOIN user_fleet uf ON ft.accountid = uf.accountid AND ft.fleetid = uf.fleetid
+    where ft.accountid = accountidarg and uf.userid = useridarg
+
+    union all
+
+    select ft.accountid, ft.pfleetid, ft.fleetid, ft.name, c.path || '/' || ft.name as path,
+           c.height + 1 from fleet_tree ft
+    join children c on ft.accountid = c.accountid and c.fleetid = ft.pfleetid
+)
+
+select c.accountid, c.fleetid, c.name as fleetname, c.path, af.isroot, af.createdat, af.createdby from children c
+    JOIN account_fleet af ON c.accountid = af.accountid AND c.fleetid = af.fleetid
+    order by height
+$$;
+
+-- TODO: following tables are not reviewed
+CREATE TABLE IF NOT EXISTS
+    geofence (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        geofenceid uuid NOT NULL,
+        geofencename text NOT NULL,
+        isactive bool NOT NULL,
+        geofenceinfo jsonb NOT NULL, -- type, latlngs, radius
+        info jsonb NOT NULL, -- address, tag, colour
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid, geofenceid),
+        UNIQUE (accountid, fleetid, geofencename),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+-- CREATE TABLE IF NOT EXISTS
+--     deleted_geofences (
+--         accountid uuid NOT NULL,
+--         fleetid uuid NOT NULL,
+--         geofenceid uuid NOT NULL,
+--         geofencename text NOT NULL,
+--         geofenceinfo jsonb NOT NULL, -- type, latlngs, radius 
+--         info jsonb NOT NULL, -- address, tag, colour, area
+--         createdat timestamptz NOT NULL,
+--         createdby uuid NOT NULL,
+--         updatedat timestamptz NOT NULL,
+--         updatedby uuid NOT NULL,
+--         PRIMARY KEY (accountid, fleetid, geofenceid)
+--     );
+CREATE TABLE IF NOT EXISTS
+    geofence_rule_type (
+        ruletypeid int NOT NULL,
+        ruletype text NOT NULL, -- Entry/exit, Route, Trip
+        PRIMARY KEY (ruletypeid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    geofence_rule (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        ruleid uuid NOT NULL,
+        rulename text NOT NULL,
+        ruletypeid int NOT NULL,
+        isactive bool NOT NULL,
+        ruleinfo jsonb NOT NULL, -- starttime, endtime  (fixed json struct)
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid, ruleid),
+        UNIQUE (accountid, fleetid, rulename),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (ruletypeid) REFERENCES geofence_rule_type (ruletypeid),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+-- CREATE TABLE IF NOT EXISTS
+--     deleted_geofence_rules (
+--         accountid uuid NOT NULL,
+--         fleetid uuid NOT NULL,
+--         ruleid uuid NOT NULL,
+--         rulename text NOT NULL,
+--         ruletypeid int NOT NULL,
+--         ruleinfo jsonb NOT NULL, -- duration, time, repeats  (fixed json struct)
+--         createdat timestamptz NOT NULL,
+--         createdby uuid NOT NULL,
+--         updatedat timestamptz NOT NULL,
+--         updatedby uuid NOT NULL,
+--         PRIMARY KEY (accountid, fleetid, ruleid)
+--     );
+CREATE TABLE IF NOT EXISTS
+    rule_geofence_action (
+        actiontypeid int NOT NULL,
+        actiontype text NOT NULL, -- Entry, Exit, Entry/exit, route
+        PRIMARY KEY (actiontypeid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    geofence_rule_info (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        ruleid uuid NOT NULL,
+        geofenceid uuid NOT NULL,
+        seqno int NOT NULL, -- 0 - start, -1 - end
+        actiontypeid int NOT NULL,
+        geofenceruleinfo jsonb NOT NULL, -- duration, time, repeats  (fixed json struct)
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid, ruleid, geofenceid, seqno),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (accountid, fleetid, ruleid) REFERENCES geofence_rule (accountid, fleetid, ruleid),
+        FOREIGN KEY (accountid, fleetid, geofenceid) REFERENCES geofence (accountid, fleetid, geofenceid),
+        FOREIGN KEY (actiontypeid) REFERENCES rule_geofence_action (actiontypeid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    geofence_rule_vehicle (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        ruleid uuid NOT NULL,
+        vinno text NOT NULL,
+        isexist bool NOT NULL, -- TODO: isenabled
+        addedat timestamptz NOT NULL,
+        addedby uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid, ruleid, vinno),
+        UNIQUE (accountid, fleetid, ruleid, vinno, isexist),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (accountid, fleetid, ruleid) REFERENCES geofence_rule (accountid, fleetid, ruleid),
+        FOREIGN KEY (vinno) REFERENCES vehicle (vinno),
+        FOREIGN KEY (addedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    geofence_rule_fleet (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        ruleid uuid NOT NULL,
+        subfleetid uuid NOT NULL,
+        isexist bool NOT NULL, -- TODO: isenabled
+        inclsfleets bool NOT NULL,
+        addedat timestamptz NOT NULL,
+        addedby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid, ruleid, subfleetid),
+        UNIQUE (accountid, fleetid, ruleid, subfleetid, isexist),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (accountid, fleetid, ruleid) REFERENCES geofence_rule (accountid, fleetid, ruleid),
+        FOREIGN KEY (accountid, subfleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (addedby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    geofence_rule_user (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        ruleid uuid NOT NULL,
+        userid uuid NOT NULL,
+        isexist bool NOT NULL, -- TODO: isenabled
+        alertinfo jsonb NOT NULL, -- emailnot, pushnot
+        addedat timestamptz NOT NULL,
+        addedby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid, ruleid, userid),
+        UNIQUE (accountid, fleetid, ruleid, userid, isexist),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (accountid, fleetid, ruleid) REFERENCES geofence_rule (accountid, fleetid, ruleid),
+        FOREIGN KEY (userid) REFERENCES users (userid),
+        FOREIGN KEY (addedby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    route (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        routeid uuid NOT NULL,
+        routename text NOT NULL,
+        isactive bool NOT NULL,
+        routeinfo jsonb NOT NULL, -- [ latlngs -> [], deviation, heading ]
+        info jsonb NOT NULL, -- points { [ name, latlng ] }
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid, routeid),
+        UNIQUE (accountid, fleetid, routename),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    trip (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        tripid uuid NOT NULL,
+        tripname text NOT NULL,
+        routeid uuid NOT NULL,
+        enblroutetrack bool NOT NULL,
+        isactive bool NOT NULL,
+        info jsonb NOT NULL, -- starttime, endtime
+        createdat timestamptz NOT NULL,
+        createdby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid, tripid),
+        UNIQUE (accountid, fleetid, tripname),
+        FOREIGN KEY (createdby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (accountid, fleetid, routeid) REFERENCES route (accountid, fleetid, routeid) -- TODO: do we also need fleet constraint here?
+    );
+
+CREATE TABLE IF NOT EXISTS
+    geofence_vehicle_rule_trip (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        vinno text NOT NULL,
+        tripstarttime timestamptz NOT NULL, -- TODO: shouldn't tripstarttime be bigint b/c of it being a PRIMARY KEY?
+        tripendtime timestamptz NOT NULL,
+        ruleid uuid NOT NULL,
+        tripid uuid NOT NULL,
+        startlat double precision NOT NULL,
+        startlng double precision NOT NULL,
+        endlat double precision NOT NULL,
+        endlng double precision NOT NULL,
+        startodo int NOT NULL,
+        endodo int NOT NULL,
+        startsoc smallint NOT NULL,
+        endsoc smallint NOT NULL,
+        info jsonb NOT NULL,
+        proctime bigint NOT NULL,
+        PRIMARY KEY (accountid, fleetid, vinno, tripstarttime),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (accountid, fleetid, ruleid) REFERENCES geofence_rule (accountid, fleetid, ruleid),
+        FOREIGN KEY (vinno) REFERENCES vehicle (vinno),
+        FOREIGN KEY (accountid, fleetid, tripid) REFERENCES trip (accountid, fleetid, tripid)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_geofence_vehicle_rule_trip_accid_flid_vin_rlid ON geofence_vehicle_rule_trip (accountid, fleetid, vinno, ruleid);
+
+CREATE INDEX IF NOT EXISTS idx_geofence_vehicle_rule_trip_accid_flid_rlid_tripst ON geofence_vehicle_rule_trip (accountid, fleetid, ruleid, tripstarttime);
+
+CREATE INDEX IF NOT EXISTS idx_geofence_vehicle_rule_trip_accid_flid_rlid_vin ON geofence_vehicle_rule_trip (accountid, fleetid, ruleid, vinno);
+
+CREATE TABLE IF NOT EXISTS
+    geofence_vehicle_rule_alert (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        vinno text NOT NULL,
+        utctime bigint NOT NULL,
+        ruleid uuid NOT NULL,
+        alerttype text NOT NULL,
+        odo int NOT NULL,
+        speed smallint NOT NULL,
+        soc smallint NOT NULL,
+        lat double precision NOT NULL,
+        lng double precision NOT NULL,
+        info jsonb NOT NULL,
+        proctime bigint NOT NULL,
+        PRIMARY KEY (accountid, fleetid, vinno, utctime),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (accountid, fleetid, ruleid) REFERENCES geofence_rule (accountid, fleetid, ruleid),
+        FOREIGN KEY (vinno) REFERENCES vehicle (vinno)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_geofence_vehicle_rule_alert_accid_flid_vin_rlid ON geofence_vehicle_rule_alert (accountid, fleetid, vinno, ruleid);
+
+CREATE INDEX IF NOT EXISTS idx_geofence_vehicle_rule_alert_accid_flid_rlid_utctime ON geofence_vehicle_rule_alert (accountid, fleetid, ruleid, utctime);
+
+CREATE INDEX IF NOT EXISTS idx_geofence_vehicle_rule_alert_accid_flid_rlid_vin ON geofence_vehicle_rule_alert (accountid, fleetid, ruleid, vinno);
+
+CREATE TABLE IF NOT EXISTS
+    user_dashboard (
+        accountid uuid NOT NULL,
+        userid uuid NOT NULL,
+        dashboardid uuid NOT NULL,
+        dashboardname text NOT NULL,
+        dashboardtype text NOT NULL,
+        dashboardinfo jsonb NOT NULL,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (accountid, userid, dashboardid),
+        UNIQUE (accountid, userid, dashboardname),
+        FOREIGN KEY (userid) REFERENCES users (userid),
+        FOREIGN KEY (accountid) REFERENCES account (accountid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    activity_log (
+        auditid BIGINT GENERATED BY DEFAULT AS IDENTITY (
+            START
+            WITH
+                1 INCREMENT BY 1
+        ),
+        msgtype text NOT NULL,
+        msgpayload jsonb NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (auditid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    public_api_audit_log (
+        auditid BIGINT GENERATED BY DEFAULT AS IDENTITY (
+            START
+            WITH
+                1 INCREMENT BY 1
+        ),
+        endpoint text NOT NULL,
+        method text NOT NULL,
+        statuscode smallint NOT NULL,
+        issuccess boolean NOT NULL,
+        requestkey text,
+        requestvalue text,
+        requestbody jsonb,
+        responsebody jsonb,
+        errorcode text,
+        ipaddress inet,
+        useragent text,
+        referer text,
+        requestid text,
+        processingtimems integer,
+        captchavalidated boolean DEFAULT FALSE,
+        createdat timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (auditid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    sos_contacts (
+        contactid SERIAL PRIMARY KEY,
+        contactname text NOT NULL,
+        contactmobile text NOT NULL,
+        contactemail text NULL,
+        priority smallint NOT NULL DEFAULT 1, -- 1=highest priority, 5=lowest
+        isactive boolean NOT NULL DEFAULT true,
+        CONSTRAINT valid_email CHECK (
+            contactemail IS NULL
+            OR contactemail ~ '^[^\s@]+@[^\s@]+\.[^\s@]+$'
+        ),
+        CONSTRAINT valid_priority CHECK (
+            priority >= 1
+            AND priority <= 5
+        )
+    );
+
+CREATE TABLE IF NOT EXISTS
+    documents (
+        id text NOT NULL, -- 'PRIVACY', 'TERMS', 'SAFETY', etc.
+        url text NOT NULL,
+        priority integer NOT NULL,
+        isenabled boolean NOT NULL DEFAULT true,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (id),
+        UNIQUE (priority)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    banners (
+        id text NOT NULL, -- 'TERMS', 'PRIVACY', 'PROMOTIONS', etc.
+        url text NOT NULL,
+        priority integer NOT NULL,
+        isenabled boolean NOT NULL DEFAULT true,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (id),
+        UNIQUE (priority)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    user_mpin (
+        userid uuid NOT NULL,
+        mpin text NOT NULL,
+        isenabled boolean NOT NULL DEFAULT true,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (userid),
+        FOREIGN KEY (userid) REFERENCES users (userid)
+    );
+
+CREATE INDEX IF NOT EXISTS idx_sos_contacts_priority ON sos_contacts (priority);
+
+CREATE TABLE IF NOT EXISTS
+    model_param (
+        model text NOT NULL,
+        variant text NOT NULL,
+        paramname text NOT NULL, --- user readable parameter name "SOC", "Cell Temperatures"
+        queryparams text NOT NULL, --- parameter he has to send in the query ["soc"], ["bt1", "bt2", "bt3"]
+        unit text NOT NULL, --- "%", "C"
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (model)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    trip_vehicle (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        tripid uuid NOT NULL,
+        vinno text NOT NULL,
+        addedat timestamptz NOT NULL,
+        addedby uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid, tripid, vinno),
+        FOREIGN KEY (addedby) REFERENCES users (userid),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (accountid, fleetid, tripid) REFERENCES trip (accountid, fleetid, tripid), -- TODO: do we also need fleet constraint here?
+        FOREIGN KEY (vinno) REFERENCES vehicle (vinno)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    trip_fleet (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        tripid uuid NOT NULL,
+        subfleetid uuid NOT NULL,
+        inclsfleets bool NOT NULL,
+        addedat timestamptz NOT NULL,
+        addedby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid, tripid, subfleetid),
+        FOREIGN KEY (addedby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (accountid, fleetid, tripid) REFERENCES trip (accountid, fleetid, tripid), -- TODO: do we also need fleet constraint here?
+        FOREIGN KEY (accountid, subfleetid) REFERENCES account_fleet (accountid, fleetid) -- TODO: do we also need fleet constraint here?
+    );
+
+CREATE TABLE IF NOT EXISTS
+    trip_user (
+        accountid uuid NOT NULL,
+        fleetid uuid NOT NULL,
+        tripid uuid NOT NULL,
+        userid uuid NOT NULL,
+        alertinfo jsonb NOT NULL, -- emailnot, pushnot
+        addedat timestamptz NOT NULL,
+        addedby uuid NOT NULL,
+        updatedat timestamptz NOT NULL,
+        updatedby uuid NOT NULL,
+        PRIMARY KEY (accountid, fleetid, tripid, userid),
+        FOREIGN KEY (addedby) REFERENCES users (userid),
+        FOREIGN KEY (updatedby) REFERENCES users (userid),
+        FOREIGN KEY (accountid, fleetid) REFERENCES account_fleet (accountid, fleetid),
+        FOREIGN KEY (accountid, fleetid, tripid) REFERENCES trip (accountid, fleetid, tripid), -- TODO: do we also need fleet constraint here?
+        FOREIGN KEY (userid) REFERENCES users (userid)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    gmap_api_log (
+        id BIGINT GENERATED BY DEFAULT AS IDENTITY (
+            START
+            WITH
+                1 INCREMENT BY 1
+        ),
+        accountid uuid NOT NULL,
+        userid uuid NOT NULL,
+        apiurl text NOT NULL,
+        payload jsonb NOT NULL,
+        response jsonb NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (id),
+        FOREIGN KEY (userid) REFERENCES users (userid),
+        FOREIGN KEY (accountid) REFERENCES account (accountid)
+    );
+
+-- vehicle model family
+CREATE TABLE IF NOT EXISTS
+    vehicle_alert (
+        alertcode text NOT NULL,
+        alertseverity text NOT NULL, -- low, medium, high, critical
+        alertname text NOT NULL,
+        alertinfo JSON DEFAULT '{}',
+        isenabled BOOLEAN DEFAULT TRUE,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (alertcode, alertseverity),
+        UNIQUE (alertname)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    dst_code (
+        dstcode text NOT NULL,
+        dstname text NOT NULL,
+        dstinfo JSON DEFAULT '{}',
+        isenabled BOOLEAN DEFAULT TRUE,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (dstcode),
+        UNIQUE (dstname)
+    );
+
+CREATE TABLE IF NOT EXISTS
+    vehicle_model_alert_dst (
+        modelcode text NOT NULL,
+        alertcode text NOT NULL,
+        alertseverity text NOT NULL, -- low, medium, high, critical
+        dstcode text NOT NULL,
+        isenabled BOOLEAN DEFAULT TRUE,
+        createdat timestamptz NOT NULL,
+        updatedat timestamptz NOT NULL,
+        PRIMARY KEY (modelcode, alertcode, alertseverity, dstcode),
+        FOREIGN KEY (modelcode) REFERENCES vehicle_model (modelcode),
+        FOREIGN KEY (alertcode, alertseverity) REFERENCES vehicle_alert (alertcode, alertseverity),
+        FOREIGN KEY (dstcode) REFERENCES dst_code (dstcode)
+    );
+
+-- Create view for fleet_user_perm based on user roles and permissions
+-- This view combines fleet_user_role and role_perm to provide user permissions at the fleet level
+CREATE OR REPLACE VIEW
+    fleet_user_perm AS
+SELECT DISTINCT
+    fur.accountid,
+    fur.fleetid,
+    fur.userid,
+    rp.permid,
+    rp.isenabled,
+    rp.createdat,
+    rp.createdby
+FROM
+    fleet_user_role fur
+    JOIN role_perm rp ON fur.accountid = rp.accountid
+    AND fur.roleid = rp.roleid
+WHERE
+    rp.isenabled = true;
+
+-- Add comment to explain the view
+COMMENT ON VIEW fleet_user_perm IS 'View that provides user permissions at the fleet level by joining fleet_user_role with role_perm. This view is used in permission checking functions to determine what permissions a user has for specific fleets.';
+
+-- Create index on the underlying tables for better performance
+CREATE INDEX IF NOT EXISTS idx_fleet_user_role_accountid_fleetid_userid ON fleet_user_role (accountid, fleetid, userid);
+
+CREATE INDEX IF NOT EXISTS idx_role_perm_accountid_roleid_permid ON role_perm (accountid, roleid, permid)
+WHERE
+    isenabled = true;
+
+-- Functions
+CREATE
+OR REPLACE FUNCTION refresh_platform_user_role_mv () RETURNS TRIGGER AS $$
+BEGIN
+    -- For INSERT/UPDATE operations
+    IF (TG_OP = 'INSERT' OR TG_OP = 'UPDATE') THEN
+        IF NEW.accountid = 'ffffffff-ffff-ffff-ffff-ffffffffffff' THEN
+            BEGIN
+                REFRESH MATERIALIZED VIEW CONCURRENTLY platform_user_role_mv;
+            EXCEPTION
+                WHEN OTHERS THEN
+                    -- If CONCURRENTLY fails, try without it
+                    REFRESH MATERIALIZED VIEW platform_user_role_mv;
+            END;
+        END IF;
+    -- For DELETE operations
+    ELSIF (TG_OP = 'DELETE') THEN
+        IF OLD.accountid = 'ffffffff-ffff-ffff-ffff-ffffffffffff' THEN
+            BEGIN
+                REFRESH MATERIALIZED VIEW CONCURRENTLY platform_user_role_mv;
+            EXCEPTION
+                WHEN OTHERS THEN
+                    -- If CONCURRENTLY fails, try without it
+                    REFRESH MATERIALIZED VIEW platform_user_role_mv;
+            END;
+        END IF;
+    END IF;
+    
+    -- Return appropriate value based on operation
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    ELSE
+        RETURN NEW;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE
+OR REPLACE FUNCTION get_sub_fleet_tree (useridarg uuid, accountidarg uuid, permidarg text) RETURNS TABLE (
+    accountid uuid,
+    pfleetid uuid,
+    fleetid uuid,
+    name text,
+    depth bigint,
+    isdeleted bool
+) language sql as $$
+with recursive parent as (
+    select ft.accountid, ft.pfleetid, ft.fleetid, ft.name, ft.isdeleted, 1 as depth from fleet_tree ft
+    join user_fleet uf on ft.accountid = uf.accountid and uf.fleetid = uf.fleetid
+    join fleet_user_perm fup on uf.accountid = fup.accountid and uf.fleetid = fup.fleetid and uf.userid = fup.userid
+    where uf.accountid = accountidarg and uf.userid = useridarg and fup.permid = permidarg
+
+    union all
+
+    select ft.accountid, ft.pfleetid, ft.fleetid, ft.name, ft.isdeleted, p.depth + 1 from fleet_tree ft
+    join parent p on ft.accountid = p.accountid and p.fleetid = ft.pfleetid
+)
+select p.accountid, p.pfleetid, p.fleetid, p.name, p.depth, p.isdeleted from parent p
+order by depth
+$$;
+
+CREATE
+OR REPLACE FUNCTION get_parent_fleet_path ( -- note: no need to check perm here. b/c we are using it as path-prefix
+    useridarg uuid,
+    accountidarg uuid,
+    rootparentfleetidarg uuid
+) RETURNS TABLE (path text, leafid uuid) language sql as $$
+with recursive children as (
+
+    select ft.accountid, ft.pfleetid, ft.fleetid, ft.name, ft.name as path, 1 as height, ft.fleetid as leafid from fleet_tree ft
+    join user_fleet uf on ft.accountid = uf.accountid and ft.fleetid = uf.fleetid
+    where uf.accountid = accountidarg and uf.userid = useridarg
+
+    union all
+
+    select ft.accountid, ft.pfleetid, ft.fleetid, ft.name, ft.name || '/' || c.path as path,
+           c.height + 1, c.leafid from fleet_tree ft
+    join children c on ft.accountid = c.accountid and c.pfleetid = ft.fleetid
+)
+
+select c.path, c.leafid from children c
+    where c.pfleetid = rootparentfleetidarg
+    order by height
+$$;
+
+CREATE
+OR REPLACE FUNCTION get_parent_fleet_ids_with_perm (
+    useridarg uuid,
+    accountidarg uuid,
+    fleetidarg uuid,
+    permidarg text
+) RETURNS TABLE (fleetid uuid, permid text) language sql as $$
+    with recursive children as (
+
+        select ft.accountid, ft.pfleetid, ft.fleetid, 1 as height from fleet_tree ft
+        where ft.accountid = accountidarg and ft.fleetid = fleetidarg
+
+        union all
+
+        select ft.accountid, ft.pfleetid, ft.fleetid, c.height + 1 from fleet_tree ft
+        join children c on ft.accountid = c.accountid and c.pfleetid = ft.fleetid
+    )
+
+    select c.fleetid, fup.permid from children c
+    left join fleet_user_perm fup on c.accountid = fup.accountid and c.fleetid = fup.fleetid
+    where fup.userid = useridarg and fup.permid = permidarg
+    order by c.height desc
+$$;
+
+-- given fleetid, userid; check if user has set of accesses anywhere in ptree
+CREATE
+OR REPLACE FUNCTION check_fleet_perms (
+    accountidarg uuid,
+    fleetidarg uuid,
+    useridarg uuid,
+    permidsarg text[]
+) RETURNS int language sql as $$
+    with recursive children as (
+        select accountid, pfleetid, fleetid from fleet_tree
+        where accountid = accountidarg and fleetid = fleetidarg
+
+        union all
+
+        select ft.accountid, ft.pfleetid, ft.fleetid from fleet_tree ft
+        join children c on ft.accountid = c.accountid and ft.fleetid = c.pfleetid
+    )
+
+    select count(*) from children c
+    join fleet_user_perm fup on c.accountid = fup.accountid and c.fleetid = fup.fleetid
+    where fup.accountid = accountidarg and fup.userid = useridarg and fup.permid = any (permidsarg)
+$$;
+
+CREATE
+OR REPLACE FUNCTION check_fleet_perm (
+    accountidarg uuid,
+    fleetidarg uuid,
+    useridarg uuid,
+    permidarg text
+) RETURNS int language sql as $$
+    with recursive children as (
+        select accountid, pfleetid, fleetid from fleet_tree
+        where accountid = accountidarg and fleetid = fleetidarg
+
+        union all
+
+        select ft.accountid, ft.pfleetid, ft.fleetid from fleet_tree ft
+        join children c on ft.accountid = c.accountid and ft.fleetid = c.pfleetid
+    )
+
+    select count(*) from children c
+    join fleet_user_perm fup on c.accountid = fup.accountid and c.fleetid = fup.fleetid
+    where fup.accountid = accountidarg and fup.userid = useridarg and fup.permid = permidarg
+$$;
+
+CREATE
+OR REPLACE FUNCTION get_all_fleets ( -- without perm
+    accountidarg uuid,
+    fleetidarg uuid
+) RETURNS TABLE (fleetid uuid) language sql as $$
+    with recursive children as (
+        select accountid, pfleetid, fleetid from fleet_tree
+        where accountid = accountidarg and fleetid = fleetidarg
+
+        union all
+
+        select ft.accountid, ft.pfleetid, ft.fleetid from fleet_tree ft
+        join children c on ft.accountid = c.accountid and ft.pfleetid = c.fleetid
+    )
+
+    select fleetid from children;
+$$;
+
+CREATE
+OR REPLACE FUNCTION get_sub_fleets_with_perm (
+    accountidarg uuid,
+    fleetidarg uuid,
+    useridarg uuid,
+    permidarg text
+) RETURNS uuid language sql as $$
+    with recursive children as (
+        select accountid, pfleetid, fleetid from fleet_tree
+        where accountid = accountidarg and fleetid = fleetidarg
+
+        union all
+
+        select ft.accountid, ft.pfleetid, ft.fleetid from fleet_tree ft
+        join children c on ft.accountid = c.accountid and ft.pfleetid = c.fleetid
+    )
+
+    select c.fleetid from children c
+    join fleet_user_perm fup on c.accountid = fup.accountid and c.fleetid =  fup.fleetid
+    where fup.userid = useridarg and fup.permid = permidarg;
+$$;
+
+CREATE TABLE IF NOT EXISTS
+    charge_deviation (
+        deviation_code TEXT PRIMARY KEY,
+        deviation_text TEXT NOT NULL
+    );
+
+-- -- Drop existing triggers if they exist
+-- DROP TRIGGER IF EXISTS refresh_platform_user_role_mv_fleet_user_role ON fleet_user_role;
+-- DROP TRIGGER IF EXISTS refresh_platform_user_role_mv_user_role ON roles;
+-- -- Trigger for fleet_user_role table
+-- CREATE TRIGGER refresh_platform_user_role_mv_fleet_user_role
+-- AFTER INSERT
+-- OR
+-- UPDATE
+-- OR DELETE ON fleet_user_role FOR EACH ROW
+-- EXECUTE FUNCTION refresh_platform_user_role_mv ();
+-- -- Trigger for roles table
+-- CREATE TRIGGER refresh_platform_user_role_mv_user_role
+-- AFTER INSERT
+-- OR
+-- UPDATE
+-- OR DELETE ON roles FOR EACH ROW
+-- EXECUTE FUNCTION refresh_platform_user_role_mv ();
+-- Function to manually refresh the materialized view
+-- CREATE
+-- OR REPLACE FUNCTION refresh_platform_user_role_mv_manual () RETURNS void AS $$
+-- BEGIN
+--     BEGIN
+--         REFRESH MATERIALIZED VIEW CONCURRENTLY platform_user_role_mv;
+--     EXCEPTION
+--         WHEN OTHERS THEN
+--             -- If CONCURRENTLY fails, try without it
+--             REFRESH MATERIALIZED VIEW platform_user_role_mv;
+--     END;
+-- END;
+-- $$ LANGUAGE plpgsql;
+-- Views
+-- Drop existing materialized view if it exists
+-- DROP MATERIALIZED VIEW IF EXISTS platform_user_role_mv;
+-- CREATE
+-- OR REPLACE MATERIALIZED VIEW platform_user_role_mv AS
+-- SELECT
+--     fur.accountid,
+--     fur.fleetid,
+--     fur.userid,
+--     r.roleid,
+--     r.rolename,
+--     r.roletype
+-- FROM
+--     fleet_user_role fur
+--     JOIN roles r ON fur.roleid = r.roleid
+--     AND fur.accountid = r.accountid
+-- WHERE
+--     fur.accountid = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
+--     AND fur.fleetid = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
+--     AND r.roletype = 'platform'
+--     AND r.isenabled = true
+-- WITH
+--     DATA;
+-- -- Create indexes on the materialized view
+-- CREATE INDEX IF NOT EXISTS idx_platform_user_role_mv_userid ON platform_user_role_mv (userid);
+-- CREATE INDEX IF NOT EXISTS idx_platform_user_role_mv_roleid ON platform_user_role_mv (roleid);
+-- CREATE INDEX IF NOT EXISTS idx_platform_user_role_mv_accountid ON platform_user_role_mv (accountid);
+-- CREATE INDEX IF NOT EXISTS idx_platform_user_role_mv_fleetid ON platform_user_role_mv (fleetid);

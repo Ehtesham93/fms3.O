@@ -1,0 +1,18 @@
+[
+    {
+        "pkgname": "Lite",
+        "modulecode": ["livetracking", "account"]
+    },
+    {
+        "pkgname": "Standard",
+        "modulecode": ["livetracking", "fleetinsights", "tripinsights", "account"]
+    },
+    {
+        "pkgname": "Pro",
+        "modulecode": ["livetracking", "fleetinsights", "tripinsights", "chargeinsights", "geofence", "chargingstations", "account"]
+    },
+    {
+        "pkgname": "Premium",
+        "modulecode": ["livetracking", "fleetinsights", "tripinsights", "chargeinsights", "service", "geofence", "chargingstations", "immobilize", "account"]
+    }
+]

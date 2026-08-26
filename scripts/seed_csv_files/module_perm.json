@@ -1,0 +1,75 @@
+{
+    "alerts": [],
+    "tripinsights": [
+      "tripinsights.overview.view",
+      "tripinsights.reports.view", 
+      "tripinsights.analytics.view"
+    ],
+    "support": [],
+    "chargeinsights": [
+      "chargeinsights.overview.view",
+      "chargeinsights.reports.view",
+      "chargeinsights.analytics.view"
+    ],
+    "immobilize": [
+      "immobilize.actions.view",
+      "immobilize.actions.admin"
+    ],
+    "chargingstations": [
+      "chargingstations.overview.view"
+    ],
+    "service": [
+      "service.sos.admin",
+      "service.booking.admin", 
+      "service.booking.view",
+      "service.sos.view"
+    ],
+    "geofence": [
+      "geofence.geofence.view",
+      "geofence.geofence.admin",
+      "geofence.rule.view",
+      "geofence.rule.admin",
+      "geofence.reports.view"
+    ],
+    "livetracking": [
+      "livetracking.overview.admin",
+      "livetracking.overview.view"
+    ],
+    "consolemgmt": [
+      "consolemgmt.model.view",
+      "consolemgmt.model.admin",
+      "consolemgmt.module.view",
+      "consolemgmt.module.admin",
+      "consolemgmt.package.view",
+      "consolemgmt.package.admin",
+      "consolemgmt.account.view",
+      "consolemgmt.account.admin",
+      "consolemgmt.accountpkg.admin",
+      "consolemgmt.accountuser.admin",
+      "consolemgmt.accountvehicle.admin",
+      "consolemgmt.accountcredit.admin",
+      "consolemgmt.administrator.view",
+      "consolemgmt.administrator.admin",
+      "consolemgmt.role.view",
+      "consolemgmt.role.admin",
+      "consolemgmt.user.view",
+      "consolemgmt.user.admin",
+      "consolemgmt.vehicle.admin",
+      "consolemgmt.vehicle.view"
+    ],
+    "account": [
+      "account.users.view",
+      "account.users.admin",
+      "account.roles.view",
+      "account.roles.admin",
+      "account.settings.view",
+      "account.settings.admin",
+      "account.fleets.view",
+      "account.fleets.admin"
+    ],
+    "fleetinsights": [
+      "fleetinsights.overview.view",
+      "fleetinsights.reports.view",
+      "fleetinsights.analytics.view"
+    ]
+  }

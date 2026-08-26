@@ -1,0 +1,214 @@
+[
+  {
+    "moduleid": "98826645-8f47-4dce-a43f-2a919d7b1312",
+    "modulename": "Immobilize",
+    "moduletype": "web",
+    "modulecode": "immobilize",
+    "moduleinfo": {
+      "moduleurl": "https://stg-nemo.mahindralastmilemobility.com:2083/uimodules/immobilize/remoteEntry.js",
+      "showfleets": true,
+      "showaccounts": true
+    },
+    "creditspervehicleday": 0,
+    "isenabled": true,
+    "createdat": "\"2025-06-16T07:09:39.287Z\"",
+    "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+    "updatedat": "\"2025-08-22T14:32:10.845Z\"",
+    "updatedby": "3dfb7780-e571-423d-8b07-69ce758cc8ed",
+    "priority": 11
+  },
+  {
+    "moduleid": "f03c3231-0845-4362-a271-7b5defc4946b",
+    "modulename": "Trip Insights",
+    "moduletype": "web",
+    "modulecode": "tripinsights",
+    "moduleinfo": {
+      "moduleurl": "https://stg-nemo.mahindralastmilemobility.com:2083/uimodules/tripinsights/remoteEntry.js",
+      "showfleets": true,
+      "showaccounts": true
+    },
+    "creditspervehicleday": 0.5,
+    "isenabled": true,
+    "createdat": "\"2025-06-03T20:14:09.814Z\"",
+    "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+    "updatedat": "\"2025-08-22T15:13:37.604Z\"",
+    "updatedby": "df4fdbb8-84a4-4284-8db9-3a4eeb9c4935",
+    "priority": 3
+  },
+  {
+    "moduleid": "2f0e7630-3929-414a-8e50-6950f0484485",
+    "modulename": "Alerts",
+    "moduletype": "web",
+    "modulecode": "alerts",
+    "moduleinfo": {
+      "moduleurl": "https://localhost:10004/remoteEntry.js",
+      "showfleets": true,
+      "showaccounts": true
+    },
+    "creditspervehicleday": 0,
+    "isenabled": false,
+    "createdat": "\"2025-06-11T13:06:40.399Z\"",
+    "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+    "updatedat": "\"2025-08-14T14:28:43.089Z\"",
+    "updatedby": "b00c173f-72c7-4dff-9c29-238c877d47a5",
+    "priority": 9
+  },
+  {
+    "moduleid": "2a6cb063-a812-440a-b4e2-4505c98a115b",
+    "modulename": "Service",
+    "moduletype": "web",
+    "modulecode": "service",
+    "moduleinfo": {
+      "moduleurl": "https://stg-nemo.mahindralastmilemobility.com:2083/uimodules/service/remoteEntry.js",
+      "showfleets": true,
+      "showaccounts": true
+    },
+    "creditspervehicleday": 1,
+    "isenabled": true,
+    "createdat": "\"2025-06-03T20:31:11.554Z\"",
+    "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+    "updatedat": "\"2025-08-22T18:22:37.126Z\"",
+    "updatedby": "19f613c0-ce32-4d36-aee8-a71152c04d56",
+    "priority": 5
+  },
+  {
+    "moduleid": "e95b95b6-0173-4729-9617-dda1430ab16b",
+    "modulename": "Support",
+    "moduletype": "web",
+    "modulecode": "support",
+    "moduleinfo": {},
+    "creditspervehicleday": 0,
+    "isenabled": false,
+    "createdat": "\"2025-06-12T13:15:35.540Z\"",
+    "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+    "updatedat": "\"2025-07-31T18:12:40.776Z\"",
+    "updatedby": "3dfb7780-e571-423d-8b07-69ce758cc8ed",
+    "priority": 10
+  },
+  {
+    "moduleid": "0462e445-dc9a-4cc7-b6cf-33dc5e860b55",
+    "modulename": "Charge Insights",
+    "moduletype": "web",
+    "modulecode": "chargeinsights",
+    "moduleinfo": {
+      "moduleurl": "https://stg-nemo.mahindralastmilemobility.com:2083/uimodules/chargeinsights/remoteEntry.js",
+      "showfleets": true,
+      "showaccounts": true
+    },
+    "creditspervehicleday": 0,
+    "isenabled": true,
+    "createdat": "\"2025-06-16T18:11:41.982Z\"",
+    "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+    "updatedat": "\"2025-08-21T12:26:04.538Z\"",
+    "updatedby": "3dfb7780-e571-423d-8b07-69ce758cc8ed",
+    "priority": 4
+  },
+  {
+    "moduleid": "559c9440-1ceb-4913-a13f-e7aca6921001",
+    "modulename": "Charging Stations",
+    "moduletype": "web",
+    "modulecode": "chargingstations",
+    "moduleinfo": {
+      "moduleurl": "https://stg-nemo.mahindralastmilemobility.com:2083/uimodules/chargingstations/remoteEntry.js",
+      "showfleets": true,
+      "showaccounts": true
+    },
+    "creditspervehicleday": 0.5,
+    "isenabled": true,
+    "createdat": "\"2025-06-29T07:30:19.836Z\"",
+    "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+    "updatedat": "\"2025-08-21T14:40:01.408Z\"",
+    "updatedby": "b00c173f-72c7-4dff-9c29-238c877d47a5",
+    "priority": 7
+  },
+  {
+    "moduleid": "9bf018cc-9e88-42f4-bbc4-31816e73cc09",
+    "modulename": "Geofence",
+    "moduletype": "web",
+    "modulecode": "geofence",
+    "moduleinfo": {
+      "moduleurl": "https://stg-nemo.mahindralastmilemobility.com:2083/uimodules/geofence/remoteEntry.js",
+      "showfleets": true,
+      "showaccounts": true
+    },
+    "creditspervehicleday": 1,
+    "isenabled": true,
+    "createdat": "\"2025-06-06T16:54:39.939Z\"",
+    "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+    "updatedat": "\"2025-08-22T12:46:10.592Z\"",
+    "updatedby": "19f613c0-ce32-4d36-aee8-a71152c04d56",
+    "priority": 6
+  },
+  {
+    "moduleid": "772e130b-9ffe-4d5d-96c3-b291e4186b97",
+    "modulename": "Account",
+    "moduletype": "web",
+    "modulecode": "account",
+    "moduleinfo": {
+      "moduleurl": "https://stg-nemo.mahindralastmilemobility.com:2083/uimodules/account/remoteEntry.js",
+      "showfleets": true,
+      "showaccounts": true
+    },
+    "creditspervehicleday": 0,
+    "isenabled": true,
+    "createdat": "\"2025-06-06T11:20:06.355Z\"",
+    "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+    "updatedat": "\"2025-08-20T13:28:08.924Z\"",
+    "updatedby": "3dfb7780-e571-423d-8b07-69ce758cc8ed",
+    "priority": 8
+  },
+  {
+    "moduleid": "487e983f-39a7-48ed-8314-dabbfca9a4fa",
+    "modulename": "Live Tracking",
+    "moduletype": "web",
+    "modulecode": "livetracking",
+    "moduleinfo": {
+      "moduleurl": "https://stg-nemo.mahindralastmilemobility.com:2083/uimodules/livetracking/remoteEntry.js",
+      "showfleets": true,
+      "showaccounts": true
+    },
+    "creditspervehicleday": 0.2,
+    "isenabled": true,
+    "createdat": "\"2025-06-03T15:35:52.854Z\"",
+    "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+    "updatedat": "\"2025-08-22T13:39:55.387Z\"",
+    "updatedby": "abde3b98-f737-48cc-a4d7-1151a3cfcb3c",
+    "priority": 1
+  },
+  {
+    "moduleid": "fb85b491-0a61-4946-ae33-390e6ad78e62",
+    "modulename": "Console",
+    "moduletype": "platform",
+    "modulecode": "consolemgmt",
+    "moduleinfo": {
+      "moduleurl": "https://stg-nemo.mahindralastmilemobility.com:2083/uimodules/consolemgmt/remoteEntry.js",
+      "showfleets": false,
+      "showaccounts": false
+    },
+    "creditspervehicleday": 0,
+    "isenabled": true,
+    "createdat": "\"2025-06-03T05:29:46.924Z\"",
+    "createdby": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+    "updatedat": "\"2025-08-22T14:37:30.737Z\"",
+    "updatedby": "3dfb7780-e571-423d-8b07-69ce758cc8ed",
+    "priority": 0
+  },
+  {
+    "moduleid": "c12ebcdc-fe2c-4584-af9c-7bd4ea2e4a37",
+    "modulename": "Fleet Insights",
+    "moduletype": "web",
+    "modulecode": "fleetinsights",
+    "moduleinfo": {
+      "moduleurl": "https://stg-nemo.mahindralastmilemobility.com:2083/uimodules/fleetinsights/remoteEntry.js",
+      "showfleets": true,
+      "showaccounts": true
+    },
+    "creditspervehicleday": 0,
+    "isenabled": true,
+    "createdat": "\"2025-06-18T12:46:47.277Z\"",
+    "createdby": "e2500964-be53-4d5f-964c-c05804593f91",
+    "updatedat": "\"2025-08-22T15:10:06.925Z\"",
+    "updatedby": "df4fdbb8-84a4-4284-8db9-3a4eeb9c4935",
+    "priority": 2
+  }
+]

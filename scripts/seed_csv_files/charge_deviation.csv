@@ -1,0 +1,5 @@
+deviation_code,deviation_text
+OVERCHARGED_1,Overcharge
+INCOMPLETECHARGED_1,Incomplete Sessions
+CONST_FASTCHARGE_1,Fastcharging voilation
+WEEKLY_DEVIATION_1,Weekly charge voilation

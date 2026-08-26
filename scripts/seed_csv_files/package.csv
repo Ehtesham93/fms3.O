@@ -1,0 +1,5 @@
+pkgid,pkgname,pkgtype,pkginfo,isenabled,createdat,createdby,updatedat,updatedby
+4144c923-d411-4ec0-8d44-4d0b7f2951be,Pro,standard,"{""vehiclecount"":100}",true,"""2025-06-03T20:32:25.205Z""",e2500964-be53-4d5f-964c-c05804593f91,"""2025-06-03T23:53:56.506Z""",e2500964-be53-4d5f-964c-c05804593f91
+6e23068e-181c-42d4-81b6-6a0eac1dd98e,Lite,standard,"{""vehiclecount"":1}",true,"""2025-06-03T20:25:23.146Z""",e2500964-be53-4d5f-964c-c05804593f91,"""2025-06-03T23:54:03.231Z""",e2500964-be53-4d5f-964c-c05804593f91
+ae8fe74b-43f3-4b69-973b-443c38d22c3b,Standard,standard,"{""vehiclecount"":1}",true,"""2025-06-20T15:06:47.870Z""",e2500964-be53-4d5f-964c-c05804593f91,"""2025-07-13T17:31:52.491Z""",e2500964-be53-4d5f-964c-c05804593f91
+035d31e8-e944-42c0-8895-2042fefc354f,Premium,standard,"{""vehiclecount"":1000}",true,"""2025-06-04T05:12:35.499Z""",e2500964-be53-4d5f-964c-c05804593f91,"""2025-07-16T12:16:08.340Z""",e2500964-be53-4d5f-964c-c05804593f91

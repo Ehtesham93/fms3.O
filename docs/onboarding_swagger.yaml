@@ -1,0 +1,1250 @@
+openapi: 3.0.0
+info:
+  title: Onboarding APIs
+  version: 1.0.0
+
+components:
+  securitySchemes:
+   
+
+paths:
+  /api/v1/fms/public/superadmin/token:
+    post:
+      tags:
+        - Authentication
+      summary: Get Token
+      description: |
+        Hash your password here -> https://academo.org/demos/SHA-256-hash-generator/
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: onboarding@nemo3.com
+                password:
+                  type: string
+                  example: "69f9f7c745883a32502dc7d9d67b16aaa09ea9d0b19de202555cf8e1b42be693"
+              required:
+                - email
+                - password
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/v1/platform/account:
+    post:
+      tags:
+        - Account Management
+      summary: Create Account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                accountname:
+                  type: string
+                  example: Test Account 1
+                mobile:
+                  type: string
+                  example: "9848312193"
+                accountinfo:
+                  type: object
+                  example: {}
+                isenabled:
+                  type: boolean
+                  example: true
+              required:
+                - accountname
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/v1/platform/account/list:
+    get:
+      tags:
+        - Account Management
+      summary: List All Accounts
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/v1/platform/account/{accountid}/vehicles:
+    get:
+      tags:
+        - Account Management
+      summary: List Vehicle In Console
+      description: Get all vehicles associated with a specific account
+      parameters:
+        - in: path
+          name: accountid
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 8db3ef0c-bf77-490f-b3f2-325a678b4cd2
+          description: The UUID of the account to fetch vehicles for
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Account vehicles fetched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Account vehicles fetched successfully"
+                  data:
+                    type: object
+                    properties:
+                      accountid:
+                        type: string
+                        format: uuid
+                        example: "8db3ef0c-bf77-490f-b3f2-325a678b4cd2"
+                      vehicles:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            vinno:
+                              type: string
+                              example: "MA1AG2ZA7S5F76345"
+                            regno:
+                              type: string
+                              example: "KA01AB1234"
+                            isowner:
+                              type: boolean
+                              example: true
+                            status:
+                              type: string
+                              enum: [SUBSCRIBED, NOTSUBSCRIBED]
+                              example: "SUBSCRIBED"
+                            subscription:
+                              type: object
+                              nullable: true
+                            accvininfo:
+                              type: object
+                              example: {}
+        '400':
+          description: Bad Request - Invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Account ID must be a valid UUID"
+                  errcode:
+                    type: string
+                    example: "INPUT_ERROR"
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "You don't have permission to get account vehicles."
+                  errcode:
+                    type: string
+                    example: "INSUFFICIENT_PERMISSIONS"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Get account vehicles failed"
+                  errcode:
+                    type: string
+                    example: "GET_ACCOUNT_VEHICLES_ERR"
+
+  /api/v1/platform/model/family:
+    post:
+      tags:
+        - Vehicle Models
+      summary: Create Model Family
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                familycode:
+                  type: string
+                  example: treo
+                familyname:
+                  type: string
+                  example: TREO
+              required:
+                - familycode
+                - familyname
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/v1/platform/model/family/list:
+    get:
+      tags:
+        - Vehicle Models
+      summary: Get All Model Family
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/v1/platform/model/list:
+    get:
+      tags:
+        - Vehicle Models
+      summary: Get All Models
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/v1/platform/model/:
+    post:
+      tags:
+        - Vehicle Models
+      summary: Create Model
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                modelcode:
+                  type: string
+                  example: treo_default
+                  description: modelcode = trim(lowercase(modelname)) + "_" + trim(lowercase(modelvariant))
+                modelname:
+                  type: string
+                  example: Treo
+                modelvariant:
+                  type: string
+                  example: Default
+                modelfamilycode:
+                  type: string
+                  example: treo
+                modeldisplayname:
+                  type: string
+                  example: TREO Default
+              required:
+                - modelcode
+                - modelname
+                - modelvariant
+                - modelfamilycode
+                - modeldisplayname
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/v1/platform/vehicle/create:
+    post:
+      tags:
+        - Vehicle Management
+      summary: Create Vehicle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vinno:
+                  type: string
+                  example: MA1AG2ZA7S5F76345
+                modelcode:
+                  type: string
+                  example: treo_default
+                vehicleinfo:
+                  type: object
+                  example: {}
+                mobileno:
+                  type: string
+                  example: "9848312193"
+              required:
+                - vinno
+                - modelcode
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/v1/platform/vehicle/{vinno}/info:
+    put:
+      tags:
+        - Vehicle Management
+      summary: Update Vehicle Information
+      parameters:
+        - in: path
+          name: vinno
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                license_plate:
+                  type: string
+                  example: abc
+                color:
+                  type: string
+                  example: blue
+                vehicle_city:
+                  type: string
+                  example: Amritsar
+                dealer:
+                  type: string
+                  example: Sangam Automobiles
+                delivered:
+                  type: string
+                  example: t
+                delivered_date:
+                  type: string
+                  example: 12/16/2019
+                data_freq:
+                  type: integer
+                  example: 120
+                tgu_model:
+                  type: string
+                  example: GEN2
+                tgu_sw_version:
+                  type: string
+                  example: eAutoSystem_3_1_3
+                tgu_phone_no:
+                  type: string
+                  example: "5754250545331"
+                tgu_imei_no:
+                  type: string
+                  example: "357851070451088"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/v1/platform/account/{accountid}/vehicle/{vinno}:
+    post:
+      tags:
+        - Vehicle Management
+      summary: Assign Vehicle To Account
+      parameters:
+        - in: path
+          name: accountid
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 08fdf30f-e0f8-458c-a7bd-55e5762f2169
+        - in: path
+          name: vinno
+          required: true
+          schema:
+            type: string
+          example: MA1AG2ZA7S5F76345
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vehicleinfo:
+                  type: object
+                  properties:
+                    regno:
+                      type: string
+                      example: MA1AG2ZA7S5F76345
+                    isowner:
+                      type: boolean
+                      example: true
+                    accvininfo:
+                      type: object
+                      example: {}
+              required:
+                - vehicleinfo
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+    delete:
+      tags:
+        - Vehicle Management
+      summary: Remove Vehicle From Account
+      parameters:
+        - in: path
+          name: accountid
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: vinno
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/v1/platform/user/createuser:
+    post:
+      tags:
+        - User Management
+      summary: Create User
+      description: For email users, default password is intellicar123
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                useridtype:
+                  type: string
+                  example: email
+                forceuseridtypeverified:
+                  type: boolean
+                  example: true
+                contact:
+                  type: string
+                  example: balapriyatest2@intellicar.in
+                displayname:
+                  type: string
+                  example: Bala Priya Test2
+                userinfo:
+                  type: object
+                  example: {}
+              required:
+                - useridtype
+                - contact
+                - displayname
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/v1/platform/account/{accountid}/user:
+    post:
+      tags:
+        - User Management
+      summary: Add User To Account
+      parameters:
+        - in: path
+          name: accountid
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 81861428-fe9c-4937-9d7e-ea5bb5c700d8
+          description: The UUID of the account to add user to
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user1@nemo3.com
+                  description: Email address of the user to add to account
+              required:
+                - email
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User added to account successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "User added to account successfully"
+                  data:
+                    type: object
+        '400':
+          description: Bad Request - Invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Contact must be a valid email address"
+                  errcode:
+                    type: string
+                    example: "INPUT_ERROR"
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "You don't have permission to add user to account."
+                  errcode:
+                    type: string
+                    example: "INSUFFICIENT_PERMISSIONS"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Add user to account failed"
+                  errcode:
+                    type: string
+                    example: "ADD_USER_TO_ACCOUNT_ERR"
+
+  /api/v1/platform/account/{accountid}/user/{userid}:
+    delete:
+      tags:
+        - User Management
+      summary: Remove User From Account
+      description: Remove a user from a specific account
+      parameters:
+        - in: path
+          name: accountid
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 81861428-fe9c-4937-9d7e-ea5bb5c700d8
+          description: The UUID of the account to remove user from
+        - in: path
+          name: userid
+          required: true
+          schema:
+            type: string
+            maxLength: 128
+          example: user123
+          description: The user ID to remove from account (max 128 characters)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User removed from account successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "User removed from account successfully"
+                  data:
+                    type: object
+        '400':
+          description: Bad Request - Invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Invalid Account ID format"
+                  errcode:
+                    type: string
+                    example: "INPUT_ERROR"
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "You don't have permission to remove user from account."
+                  errcode:
+                    type: string
+                    example: "INSUFFICIENT_PERMISSIONS"
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Remove user from account failed"
+                  errcode:
+                    type: string
+                    example: "REMOVE_USER_FROM_ACCOUNT_ERR"
+
+  /api/v1/platform/account/{accountid}:
+    delete:
+      tags:
+        - Account Management
+      summary: Delete Account
+      parameters:
+        - in: path
+          name: accountid
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+
+  /api/v1/platform/vehicle/onboardvehicle:
+    post:
+      tags:
+        - FMS JS > Platform > Vehicles
+      summary: Onboard Vehicle
+      description: Onboard a new vehicle with complete vehicle information
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - vin
+                - vehicleModel
+                - vehicleVariant
+                - tgu_imei_no
+                - mobileNo
+                - dealer
+                - deliveredDate
+                - engineNo
+                - fuelType
+                - licensePlate
+                - retailsSaleDate
+                - vehicleCity
+                - vehicleColour
+              properties:
+                vin:
+                  type: string
+                  maxLength: 128
+                  description: "Vehicle Identification Number"
+                  example: "MA1CA2ZA7SJC46267"
+                vehicleModel:
+                  type: string
+                  maxLength: 128
+                  description: "Vehicle model name"
+                  example: "TREO ZOR"
+                vehicleVariant:
+                  type: string
+                  maxLength: 128
+                  description: "Vehicle variant"
+                  example: "TREO ZOR"
+                tgu_imei_no:
+                  type: string
+                  maxLength: 128
+                  description: "TGU IMEI Number"
+                  example: "123456789012345"
+                mobileNo:
+                  type: string
+                  pattern: "^[6-9]\\d{9}$"
+                  description: "10-digit Indian mobile number"
+                  example: "9211252693"
+                dealer:
+                  type: string
+                  maxLength: 256
+                  description: "Dealer name"
+                  example: "ETGO CORPORATION LLP"
+                deliveredDate:
+                  type: string
+                  pattern: "^\\d{2}/\\d{2}/\\d{2}$"
+                  description: "Vehicle delivery date in DD/MM/YY format"
+                  example: "10/08/25"
+                engineNo:
+                  type: string
+                  maxLength: 128
+                  description: "Engine number"
+                  example: "METMEAD0ESCJ0241"
+                fuelType:
+                  type: string
+                  maxLength: 128
+                  description: "Type of fuel"
+                  example: "Electric/Battery"
+                licensePlate:
+                  type: string
+                  maxLength: 128
+                  description: "Vehicle license plate number"
+                  example: "SJC46267"
+                retailsSaleDate:
+                  type: string
+                  pattern: "^\\d{2}/\\d{2}/\\d{2}$"
+                  description: "Retail sale date in DD/MM/YY format"
+                  example: "30/07/25"
+                vehicleCity:
+                  type: string
+                  maxLength: 128
+                  description: "City where vehicle is located"
+                  example: "NOIDA"
+                vehicleColour:
+                  type: string
+                  maxLength: 128
+                  description: "Vehicle color"
+                  example: "EZORBW"
+      responses:
+        "200":
+          description: "Vehicle onboarded successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: "null"
+                  data:
+                    type: object
+                    properties:
+                      vin:
+                        type: string
+                        description: "Vehicle VIN number"
+                      vehicleModel:
+                        type: string
+                        description: "Vehicle model"
+                      vehicleVariant:
+                        type: string
+                        description: "Vehicle variant"
+                      onboardedAt:
+                        type: string
+                        format: date-time
+                        description: "Timestamp when vehicle was onboarded"
+                  msg:
+                    type: string
+                    example: "Vehicle onboarded successfully"
+        "400":
+          description: "Bad Request - Invalid input parameters"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: object
+                    properties:
+                      errcode:
+                        type: string
+                        example: "INPUT_ERROR"
+                      errdata:
+                        type: string
+                        example: "VIN cannot be empty"
+                  data:
+                    type: "null"
+                  msg:
+                    type: string
+                    example: "Invalid input data"
+        "403":
+          description: "Forbidden - Insufficient permissions"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: object
+                    properties:
+                      errcode:
+                        type: string
+                        example: "INSUFFICIENT_PERMISSIONS"
+                  data:
+                    type: "null"
+                  msg:
+                    type: string
+                    example: "You don't have permission to onboard vehicle"
+        "500":
+          description: "Internal Server Error - Vehicle onboarding failed"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: object
+                    properties:
+                      errcode:
+                        type: string
+                        example: "ONBOARD_VEHICLE_ERR"
+                      errdata:
+                        type: string
+                        example: "Internal server error details"
+                  data:
+                    type: "null"
+                  msg:
+                    type: string
+                    example: "Vehicle onboarding failed"
+
+  /api/v1/platform/user/onboarduseraccount:
+    post:
+      tags:
+        - FMS JS > Platform > Users
+      summary: Onboard User and Account
+      description: Onboard a new user account with complete customer and vehicle information
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customeraddress
+                - customeraddresscity
+                - customeraddresscountry
+                - customeraddresspincode
+                - customercontactemail
+                - customercontactmobile
+                - customerdateofbirth
+                - customergender
+                - customername
+                - customertype
+                - licenseplate
+                - vin
+                - nemo_user_mobile
+              properties:
+                corporatetype:
+                  type: string
+                  maxLength: 128
+                  description: "Corporate type (optional)"
+                  example: ""
+                customeraddress:
+                  type: string
+                  maxLength: 512
+                  description: "Customer address"
+                  example: "BISRAKH, JALALPUR,"
+                customeraddresscity:
+                  type: string
+                  maxLength: 128
+                  description: "Customer address city"
+                  example: "NOIDA"
+                customeraddresscountry:
+                  type: string
+                  maxLength: 128
+                  description: "Customer address country"
+                  example: "INDIA"
+                customeraddresspincode:
+                  type: string
+                  maxLength: 10
+                  description: "Customer address pincode"
+                  example: "203207"
+                customercontactemail:
+                  type: string
+                  format: email
+                  maxLength: 256
+                  description: "Customer contact email"
+                  example: "nomail.mahindra@gmail.com"
+                customercontactmobile:
+                  type: string
+                  pattern: "^[6-9]\\d{9}$"
+                  description: "10-digit Indian mobile number"
+                  example: "9211252693"
+                customerdateofbirth:
+                  type: string
+                  pattern: "^\\d{2}/\\d{2}/\\d{2}$"
+                  description: "Customer date of birth in DD/MM/YY format"
+                  example: "28/02/74"
+                customergender:
+                  type: string
+                  enum: ["Male", "Female", "Other"]
+                  description: "Customer gender"
+                  example: "Male"
+                customername:
+                  type: string
+                  maxLength: 256
+                  description: "Customer name"
+                  example: "RAJ  KUMAR"
+                customertype:
+                  type: string
+                  enum: ["Individual", "Corporate"]
+                  description: "Customer type"
+                  example: "Individual"
+                licenseplate:
+                  type: string
+                  maxLength: 128
+                  description: "Vehicle license plate number"
+                  example: "SJC46267"
+                vin:
+                  type: string
+                  maxLength: 128
+                  description: "Vehicle Identification Number"
+                  example: "MA1CA2ZA7SJC46267"
+                nemo_user_mobile:
+                  type: string
+                  pattern: "^[6-9]\\d{9}$"
+                  description: "Nemo user mobile number (10-digit Indian mobile)"
+                  example: "9211252138"
+      responses:
+        "200":
+          description: "User and account onboarded successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: "null"
+                  data:
+                    type: object
+                    properties:
+                      userid:
+                        type: string
+                        format: uuid
+                        description: "Created user ID"
+                      accountid:
+                        type: string
+                        format: uuid
+                        description: "Created account ID"
+                      customername:
+                        type: string
+                        description: "Customer name"
+                      vin:
+                        type: string
+                        description: "Vehicle VIN number"
+                      onboardedAt:
+                        type: string
+                        format: date-time
+                        description: "Timestamp when user was onboarded"
+                  msg:
+                    type: string
+                    example: "User onboarded successfully"
+        "400":
+          description: "Bad Request - Invalid input parameters"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: object
+                    properties:
+                      errcode:
+                        type: string
+                        example: "INPUT_ERROR"
+                      errdata:
+                        type: string
+                        example: "Customer name cannot be empty"
+                  data:
+                    type: "null"
+                  msg:
+                    type: string
+                    example: "Invalid input data"
+        "403":
+          description: "Forbidden - Insufficient permissions"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: object
+                    properties:
+                      errcode:
+                        type: string
+                        example: "INSUFFICIENT_PERMISSIONS"
+                  data:
+                    type: "null"
+                  msg:
+                    type: string
+                    example: "You don't have permission to onboard user account"
+        "500":
+          description: "Internal Server Error - User onboarding failed"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: object
+                    properties:
+                      errcode:
+                        type: string
+                        example: "ONBOARD_USER_ACCOUNT_ERR"
+                      errdata:
+                        type: string
+                        example: "Internal server error details"
+                  data:
+                    type: "null"
+                  msg:
+                    type: string
+                    example: "Onboard user account failed"
+                    
+  /api/v1/fms/user/refreshtoken:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh User Token
+      description: |
+        On successful refresh, returns a new authentication token in a cookie.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Token refreshed successfully
+
+  /api/v1/platform/account/createcorporateaccount:
+    post:
+      tags:
+        - Account Management
+      summary: Create Corporate Account
+      description: Creates a new corporate account. If an account with the same name already exists, returns the existing account.
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - accountname
+              properties:
+                accountname:
+                  type: string
+                  maxLength: 128
+                  pattern: "^[A-Za-z0-9](?:[A-Za-z0-9 _-]*[A-Za-z0-9])?$"
+                  description: "Account name (will be converted to uppercase and normalized)"
+                  example: "Mohinder"
+                mobile:
+                  type: string
+                  pattern: "^[6-9]\\d{9}$"
+                  description: "10-digit Indian mobile number starting with 6-9"
+                  example: "7488835182"
+                email:
+                  type: string
+                  format: email
+                  description: "Email address"
+                  example: "mohitsharma@intellicar.in"
+                isenabled:
+                  type: boolean
+                  description: "Whether the account is enabled"
+                  default: true
+                  example: true
+      responses:
+        '200':
+          description: Successful response - Account created or already exists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      accountid:
+                        type: string
+                        format: uuid
+                        example: "123e4567-e89b-12d3-a456-426614174000"
+                      account:
+                        type: object
+                        properties:
+                          accountid:
+                            type: string
+                            format: uuid
+                          accountname:
+                            type: string
+                            example: "MOHINDER"
+                          accountinfo:
+                            type: object
+                            properties:
+                              email:
+                                type: string
+                                format: email
+                              mobile:
+                                type: string
+                          isenabled:
+                            type: boolean
+                          createdat:
+                            type: string
+                            format: date-time
+                  msg:
+                    type: string
+                    example: "Account created successfully or Account already exists"
+        '400':
+          description: Bad Request - Invalid input or account already exists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: object
+                    properties:
+                      errcode:
+                        type: string
+                        example: "INPUT_ERROR | ACCOUNT_ALREADY_EXISTS"
+                      errdata:
+                        type: object
+                        nullable: true
+                  data:
+                    type: object
+                    nullable: true
+                  msg:
+                    type: string
+                    example: "Invalid Account Name format | Account already exists with accountid: ..."
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: object
+                    properties:
+                      errcode:
+                        type: string
+                        example: "INSUFFICIENT_PERMISSIONS"
+                  data:
+                    type: object
+                    nullable: true
+                  msg:
+                    type: string
+                    example: "You don't have permission to create account."
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  err:
+                    type: object
+                    properties:
+                      errcode:
+                        type: string
+                        example: "CREATE_ACCOUNT_ERR"
+                      errdata:
+                        type: string
+                  data:
+                    type: object
+                    nullable: true
+                  msg:
+                    type: string
+                    example: "Create account failed"
+  
+  /api/v1/platform/account/listallaccounts:
+    get:
+      tags:
+        - Account Management
+      summary: List All Accounts
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json: {}
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
